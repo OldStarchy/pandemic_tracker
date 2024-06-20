@@ -1,0 +1,205 @@
+import { Dispatch, SetStateAction, useState } from 'react';
+import { Card } from '../lib/Card';
+import { Deck } from '../lib/Deck';
+import { Selection } from '../lib/Selection';
+import { CardSelectToggle } from './CardSelectToggle';
+
+export function CardSelectList({
+	cards,
+	selectedCards,
+	setSelectedCards,
+	drawCount,
+	style,
+	...props
+}: {
+	cards: Card[];
+	selectedCards: Record<string, number>;
+	setSelectedCards: Dispatch<SetStateAction<Record<string, number>>>;
+	drawCount?: number;
+} & React.ComponentProps<'div'>) {
+	const [filter, setFilter] = useState('');
+	const [filterExact, setFilterExact] = useState(false);
+
+	const filteredCards =
+		filter === ''
+			? cards
+			: Card.select(cards, { name: filter, fuzzy: !filterExact });
+
+	return (
+		<div
+			style={{
+				position: 'relative',
+				display: 'flex',
+				flexDirection: 'column',
+				...style,
+			}}
+			{...props}
+		>
+			<div>
+				<div>
+					<button
+						onClick={() => {
+							setSelectedCards(Selection.from(cards));
+						}}
+					>
+						Select all
+					</button>
+					<button
+						onClick={() => {
+							setSelectedCards({});
+						}}
+					>
+						Select none
+					</button>
+					<button
+						onClick={() => {
+							setSelectedCards((selection) =>
+								Selection.subtract(
+									Selection.from(cards),
+									selection
+								)
+							);
+						}}
+					>
+						Invert selection
+					</button>
+				</div>
+				<div>
+					<label>
+						Filter{' '}
+						<input
+							type="text"
+							value={filter}
+							onChange={(e) => setFilter(e.target.value)}
+						/>
+					</label>
+					<label>
+						Exact
+						<input
+							type="checkbox"
+							checked={filterExact}
+							onChange={(e) => setFilterExact(e.target.checked)}
+						/>
+					</label>
+				</div>
+				<div>
+					<button
+						onClick={() => {
+							setSelectedCards(Selection.from(filteredCards));
+						}}
+					>
+						Set selection to current
+					</button>
+					<button
+						onClick={() => {
+							setSelectedCards((selection) =>
+								Selection.subtract(
+									selection,
+									Selection.from(filteredCards)
+								)
+							);
+						}}
+					>
+						Remove current from selection
+					</button>
+				</div>
+			</div>
+			<ul
+				style={{
+					flexGrow: 1,
+					listStyle: 'none',
+					padding: 0,
+					margin: 0,
+					display: 'grid',
+					gridTemplateColumns: '1fr auto',
+					gridAutoRows: 'min-content',
+					gap: '0.25rem',
+					alignItems: 'center',
+					justifyContent: 'flex-start',
+					overflow: 'auto',
+					minHeight: 0,
+					paddingRight: '15px',
+				}}
+			>
+				<li style={{ display: 'contents' }}>
+					<span />
+					<span>{drawCount !== undefined && 'Draw Chance'}</span>
+				</li>
+				{filteredCards.map((card) => {
+					const drawChance =
+						drawCount &&
+						Deck.calculateDrawChance(
+							cards
+								.map((c) => c.count)
+								.reduce((a, b) => a + b, 0),
+							Card.select(cards, { name: card.name })
+								.map((c) => c.count)
+								.reduce((a, b) => a + b, 0),
+							drawCount
+						);
+					return (
+						<li key={card.name} style={{ display: 'contents' }}>
+							<CardSelectToggle
+								card={card}
+								selected={
+									selectedCards &&
+									(selectedCards[card.name] ?? 0)
+								}
+								setSelected={(count) => {
+									setSelectedCards((selectedCards) => {
+										const newSelectedCards = {
+											...selectedCards,
+										};
+
+										if (count === 0) {
+											delete newSelectedCards[card.name];
+										} else {
+											newSelectedCards[card.name] = count;
+										}
+
+										return newSelectedCards;
+									});
+								}}
+							/>
+							<span style={{ justifySelf: 'flex-end' }}>
+								{drawChance !== undefined && (
+									<>
+										{' '}
+										{(100 * drawChance).toFixed(2)}%
+										<br />
+										{getRatioString(drawChance)}
+									</>
+								)}
+							</span>
+						</li>
+					);
+				})}
+			</ul>
+		</div>
+	);
+}
+
+function getRatioString(ratio: number): string {
+	if (ratio < 0 || ratio > 1) {
+		throw new Error(
+			`Ratio must be between 0 and 1 (inclusive). got ${ratio}`
+		);
+	}
+
+	if (ratio === 0) return 'never';
+	if (ratio === 1) return 'fo sho';
+
+	const predefinedValues = [5000, 1000, 500, 100, 50, 20, 10, 5, 4, 3, 2];
+
+	const epsilon = 0.00001;
+	// Find the smallest value in predefinedValues where 1 / value is greater than the ratio
+	let selectedValue = predefinedValues.find(
+		(value) => ratio - epsilon <= 1 / value
+	);
+
+	if (selectedValue === undefined) {
+		return 'probable';
+	}
+
+	return `< 1 in ${selectedValue}`;
+}

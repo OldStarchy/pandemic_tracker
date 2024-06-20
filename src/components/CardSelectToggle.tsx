@@ -1,0 +1,104 @@
+import { useEffect, useState } from 'react';
+import { Card } from '../lib/Card';
+import { CardBase } from './CardBase';
+
+export function CardSelectToggle({
+	card,
+	selected,
+	setSelected,
+}: {
+	card: Card;
+	selected: number;
+	setSelected: (count: number) => void;
+}) {
+	selected = selected ?? 0;
+	const unselected = card.count - selected;
+
+	const [visibleUnselected, setVisibleUnselected] = useState(unselected);
+
+	useEffect(() => {
+		if (selected !== 0) {
+			setVisibleUnselected(card.count - selected);
+		} else {
+			const timeout = setTimeout(() => {
+				setVisibleUnselected(card.count - selected);
+			}, 100);
+
+			return () => clearTimeout(timeout);
+		}
+	}, [selected, card.count]);
+
+	return (
+		<div
+			style={{
+				position: 'relative',
+				userSelect: 'none',
+				color: card.count === 0 ? 'gray' : undefined,
+			}}
+		>
+			<CardBase
+				style={{
+					position: 'absolute',
+					left: 0,
+					top: 0,
+					bottom: 0,
+					right: 0,
+					display: 'flex',
+					justifyContent: 'space-between',
+				}}
+			>
+				<span>{visibleUnselected}</span>
+				<span>0</span>
+			</CardBase>
+			<CardBase
+				key={card.name}
+				style={{
+					marginLeft: selected > 0 ? '2rem' : 0,
+					marginRight: selected > 0 ? 0 : '2rem',
+					transition: `margin-left 0.1s ease-out,
+                  margin-right 0.1s ease-out`,
+					cursor: card.count > 0 ? 'pointer' : undefined,
+				}}
+				onClick={(e) => {
+					if (card.count === 0) return;
+
+					if (e.shiftKey) {
+						setSelected(selected === 0 ? card.count : 0);
+					} else {
+						setSelected((selected + 1) % (card.count + 1));
+					}
+				}}
+			>
+				{card.image && (
+					<img
+						style={{
+							position: 'absolute',
+							inset: 0,
+							width: '100%',
+							height: '100%',
+							zIndex: 0,
+							objectFit: 'cover',
+							filter: 'brightness(0.3)',
+						}}
+						src={card.image}
+						alt={card.name}
+					/>
+				)}
+				<div
+					style={{
+						zIndex: 1,
+						position: 'relative',
+						display: 'flex',
+						flexDirection: 'row',
+						gap: '1rem',
+					}}
+				>
+					<h3 style={{ flexGrow: 1 }}>{card.name}</h3>
+					<p>{card.description}</p>
+					<p>{card.type}</p>
+					<p>x{selected > 0 ? selected : card.count}</p>
+				</div>
+			</CardBase>
+		</div>
+	);
+}
