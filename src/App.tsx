@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+	Dispatch,
+	SetStateAction,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from 'react';
 import './App.css';
 import { CardBase } from './components/CardBase';
 import { cities } from './data/cities';
@@ -52,9 +59,18 @@ function createStripeyBackground(colors: string[]): string {
 }
 
 function App() {
-	const [drawCount, setDrawCount] = useState(1);
+	const [drawCount, setDrawCountRaw] = useState(1);
 	const [topDrawFormVisible, setTopDrawFormVisible] = useState(false);
 	const [bottomDrawFormVisible, setBottomDrawFormVisible] = useState(false);
+
+	const setDrawCount = useCallback<Dispatch<SetStateAction<number>>>(
+		(count) => {
+			setDrawCountRaw((c) =>
+				Math.max(1, typeof count === 'number' ? count : count(c))
+			);
+		},
+		[setDrawCountRaw]
+	);
 
 	const infectionNonce = useMutable(infectionDeck);
 	useMutable(discardDeck);
