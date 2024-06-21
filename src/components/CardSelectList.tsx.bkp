@@ -1,8 +1,7 @@
 import { Dispatch, SetStateAction, useState } from 'react';
+import { Assortment } from '../lib/Assortment';
 import { Card } from '../lib/Card';
-import { Deck } from '../lib/Deck';
-import { Selection } from '../lib/Selection';
-import { CardSelectToggle } from './CardSelectToggle';
+import { CardSelectToggle } from './CardSelectToggle.tsx';
 
 export function CardSelectList({
 	cards,
@@ -12,7 +11,7 @@ export function CardSelectList({
 	style,
 	...props
 }: {
-	cards: Card[];
+	cards: readonly Card[];
 	selectedCards: Record<string, number>;
 	setSelectedCards: Dispatch<SetStateAction<Record<string, number>>>;
 	drawCount?: number;
@@ -39,7 +38,7 @@ export function CardSelectList({
 				<div>
 					<button
 						onClick={() => {
-							setSelectedCards(Selection.from(cards));
+							setSelectedCards(Assortment.clone(cards));
 						}}
 					>
 						Select all
@@ -53,12 +52,12 @@ export function CardSelectList({
 					</button>
 					<button
 						onClick={() => {
-							setSelectedCards((selection) =>
-								Selection.subtract(
-									Selection.from(cards),
+							setSelectedCards((selection) => {
+								Assortment.subtract(
+									Assortment.from(cards),
 									selection
-								)
-							);
+								);
+							});
 						}}
 					>
 						Invert selection
@@ -70,7 +69,9 @@ export function CardSelectList({
 						<input
 							type="text"
 							value={filter}
-							onChange={(e) => setFilter(e.target.value)}
+							onChange={(e) => {
+								setFilter(e.target.value);
+							}}
 						/>
 					</label>
 					<label>
@@ -78,26 +79,28 @@ export function CardSelectList({
 						<input
 							type="checkbox"
 							checked={filterExact}
-							onChange={(e) => setFilterExact(e.target.checked)}
+							onChange={(e) => {
+								setFilterExact(e.target.checked);
+							}}
 						/>
 					</label>
 				</div>
 				<div>
 					<button
 						onClick={() => {
-							setSelectedCards(Selection.from(filteredCards));
+							setSelectedCards(Assortment.from(filteredCards));
 						}}
 					>
 						Set selection to current
 					</button>
 					<button
 						onClick={() => {
-							setSelectedCards((selection) =>
-								Selection.subtract(
+							setSelectedCards((selection) => {
+								Assortment.subtract(
 									selection,
-									Selection.from(filteredCards)
-								)
-							);
+									Assortment.from(filteredCards)
+								);
+							});
 						}}
 					>
 						Remove current from selection
@@ -128,7 +131,7 @@ export function CardSelectList({
 				{filteredCards.map((card) => {
 					const drawChance =
 						drawCount &&
-						Deck.calculateDrawChance(
+						IAssortment.calculateDrawChance(
 							cards
 								.map((c) => c.count)
 								.reduce((a, b) => a + b, 0),
@@ -193,7 +196,7 @@ function getRatioString(ratio: number): string {
 
 	const epsilon = 0.00001;
 	// Find the smallest value in predefinedValues where 1 / value is greater than the ratio
-	let selectedValue = predefinedValues.find(
+	const selectedValue = predefinedValues.find(
 		(value) => ratio - epsilon <= 1 / value
 	);
 

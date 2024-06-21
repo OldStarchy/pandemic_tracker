@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from '../lib/Card';
-import { CardNoSelect } from './CardNoSelect';
+import { CardNoSelect } from './CardNoSelect.tsx';
 
 export function CardNoSelectList({
 	cards,

@@ -55,3 +55,9 @@ button:disabled {
 button:not(:disabled) {
 	cursor: pointer;
 }
+
+ul,
+ol {
+	list-style-type: none;
+	padding: 0;
+}

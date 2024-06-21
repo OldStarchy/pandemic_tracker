@@ -29,9 +29,7 @@ export function CardGrid({ cards }: { cards: Card[] }) {
 					)}
 					<div style={{ zIndex: 1, position: 'relative' }}>
 						<h3>{card.name}</h3>
-						<p>{card.description}</p>
 						<p>{card.type}</p>
-						{card.count > 1 && <p>x{card.count}</p>}
 					</div>
 				</CardBase>
 			))}

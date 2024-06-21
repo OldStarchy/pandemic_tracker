@@ -1,36 +1,127 @@
-import { useCallback, useMemo, useState } from 'react';
+import {
+	Dispatch,
+	SetStateAction,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from 'react';
 import './App.css';
 import { CardBase } from './components/CardBase';
-import { CardSelectList } from './components/CardSelectList';
 import { cities } from './data/cities';
+import { Assortment, IAssortment } from './lib/Assortment';
 import { Card } from './lib/Card';
-import { Config } from './lib/Config';
-import { Deck } from './lib/Deck';
-import { Selection } from './lib/Selection';
+import { Deck, IDeck, IPossibleCard, IReadonlyPossibleCard } from './lib/Deck';
+import { IMutable } from './lib/Mutable';
+
+const cityCards = cities
+	.slice(0, 10)
+	.map((city) => Card.get({ name: city, type: 'City' }));
+const shuffledCityCards = new Assortment(
+	new Map(cityCards.map((card) => [card, 2]))
+);
+const infectionDeck = new Deck('Infection Deck');
+infectionDeck.insert(
+	new Array(Assortment.getTotalCardCount(shuffledCityCards)).fill(
+		shuffledCityCards
+	),
+	0
+);
+
+const discardDeck = new Deck('Discard Deck');
+
+function getNthNiceColor(n: number): string {
+	const goldenRatioConjugate = 0.618033988749895;
+	const hue = (n * goldenRatioConjugate) % 1;
+	const color = `hsl(${hue * 360}, 100%, 10%)`;
+	return color;
+}
+
+export function useMutable(mutable: IMutable): Record<string, never> {
+	const [nonce, setNonce] = useState<Record<string, never>>({});
+
+	const onChange = useCallback(() => {
+		setNonce({});
+	}, []);
+
+	useEffect(() => mutable.onChange(onChange), [mutable, onChange]);
+
+	return nonce;
+}
+
+function createStripeyBackground(colors: string[]): string {
+	return `repeating-linear-gradient(45deg, ${colors
+		.map(
+			(color, index) =>
+				`${color} ${index * 1.5}rem, ${color} ${(index + 1) * 1.5}rem`
+		)
+		.join(', ')})`;
+}
 
 function App() {
-	const config = useMemo(() => Config.createDefault(), []);
+	const [drawCount, setDrawCountRaw] = useState(1);
+	const [topDrawFormVisible, setTopDrawFormVisible] = useState(false);
+	const [bottomDrawFormVisible, setBottomDrawFormVisible] = useState(false);
 
-	const [masterDeck, setMasterDeck] = useState<Deck>(() =>
-		Deck.clone(config.masterDeck)
+	const setDrawCount = useCallback<Dispatch<SetStateAction<number>>>(
+		(count) => {
+			setDrawCountRaw((c) =>
+				Math.max(1, typeof count === 'number' ? count : count(c))
+			);
+		},
+		[setDrawCountRaw]
 	);
 
-	const [masterDeckSelection, setMasterDeckSelection] = useState<
-		Record<string, number>
-	>({});
+	const infectionNonce = useMutable(infectionDeck);
+	useMutable(discardDeck);
 
-	const [discardDeck, setDiscardDeck] = useState<Deck>(() => ({
-		name: 'Discard Deck',
-		cards: [],
-	}));
+	const cardDrawProbabilities = useMemo(() => {
+		const allTheCards = infectionDeck.cards
+			.slice(0, drawCount)
+			.reduce((cards, item) => {
+				if (item instanceof Card) {
+					cards.add(item);
+				} else {
+					for (const [card] of item.cards) {
+						cards.add(card);
+					}
+				}
 
-	const [discardDeckSelection, setDiscardDeckSelection] = useState<
-		Record<string, number>
-	>({});
+				return cards;
+			}, new Set<Card>());
 
-	const [drawCount, setDrawCount] = useState(1);
+		return [...allTheCards].map((card) => {
+			const probability = Deck.calculateDrawChance(
+				infectionDeck,
+				card,
+				drawCount
+			);
 
-	const [addCardPopupVisible, setAddCardPopupVisible] = useState(false);
+			return { card, probability };
+		});
+	}, [infectionNonce, drawCount]);
+
+	const colors = useMemo(
+		() => getAssortmentColors(infectionDeck.cards.slice(0, drawCount)),
+		[infectionNonce, drawCount]
+	);
+
+	const nextDrawOptions = useMemo(() => {
+		const top = infectionDeck.peek(0);
+		if (top) {
+			return Assortment.getCardOptions(top);
+		}
+		return [];
+	}, [infectionNonce]);
+
+	const nextBottomDrawOptions = useMemo(() => {
+		const bottom = infectionDeck.peek(-1)!;
+		if (bottom) {
+			return Assortment.getCardOptions(bottom);
+		}
+
+		return [];
+	}, [infectionNonce]);
 
 	return (
 		<div className="App">
@@ -41,7 +132,9 @@ function App() {
 						type="number"
 						min="1"
 						value={drawCount}
-						onChange={(e) => setDrawCount(parseInt(e.target.value))}
+						onChange={(e) => {
+							setDrawCount(parseInt(e.target.value));
+						}}
 					/>
 				</label>
 				<button
@@ -59,6 +152,136 @@ function App() {
 					+
 				</button>
 			</div>
+			<button
+				onClick={() => {
+					if (infectionDeck.cards.length === 0) return;
+
+					if (nextDrawOptions.length > 0) setTopDrawFormVisible(true);
+					else {
+						const stack = infectionDeck
+							.remove(0, 1)
+							.map(Assortment.reveal);
+
+						discardDeck.insert(stack, 0);
+					}
+				}}
+			>
+				Draw Top
+			</button>
+			<button
+				onClick={() => {
+					if (infectionDeck.cards.length === 0) return;
+
+					if (nextBottomDrawOptions.length > 0)
+						setBottomDrawFormVisible(true);
+					else {
+						const stack = infectionDeck
+							.remove(-1, 1)
+							.map(Assortment.reveal);
+
+						discardDeck.insert(stack, 0);
+					}
+				}}
+			>
+				Draw Bottom
+			</button>
+			<button
+				onClick={() => {
+					discardDeck.shuffle();
+
+					const cards = discardDeck.remove(
+						0,
+						discardDeck.cards.length
+					);
+
+					infectionDeck.insert(cards, 0);
+				}}
+			>
+				Shuffle and Restack
+			</button>
+			<button
+				onClick={() => {
+					const data = JSON.stringify(
+						{
+							infectionDeck: infectionDeck.toJson(),
+							discardDeck: discardDeck.toJson(),
+							drawCount,
+						},
+						null,
+						2
+					);
+					const blob = new Blob([data], { type: 'application/json' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = 'deck.json';
+					a.click();
+					URL.revokeObjectURL(url);
+					a.remove();
+				}}
+			>
+				Export
+			</button>
+			<button
+				onClick={async () => {
+					const input = document.createElement('input');
+					input.type = 'file';
+					input.accept = '.json';
+					input.onchange = async () => {
+						const file = input.files?.[0];
+						if (!file) return;
+
+						const data = await file.text();
+						const json = JSON.parse(data);
+
+						const infecDec = Deck.fromJson(json.infectionDeck);
+						infectionDeck.remove(0, infectionDeck.cards.length);
+						infectionDeck.insert(
+							infecDec.cards as unknown as IPossibleCard[],
+							0
+						);
+						infecDec.remove(0, infecDec.cards.length);
+
+						const discDec = Deck.fromJson(json.discardDeck);
+						discardDeck.remove(0, discardDeck.cards.length);
+						discardDeck.insert(
+							discDec.cards as unknown as IPossibleCard[],
+							0
+						);
+						discDec.remove(0, discDec.cards.length);
+
+						setDrawCount(json.drawCount);
+					};
+					input.click();
+				}}
+			>
+				Import
+			</button>
+
+			<ol>
+				{cardDrawProbabilities.map(({ card, probability }, index) => {
+					const color = [...colors.entries()]
+						.filter(([assortment]) => assortment.cards.has(card))
+						.map(([, color]) => color);
+					return (
+						<li key={index}>
+							<CardBase
+								style={{
+									width: '400px',
+									height: '1.5rem',
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									background: createStripeyBackground(color),
+								}}
+							>
+								<h3>{card.name}</h3>
+								<p>{(probability * 100).toFixed(2)}%</p>
+							</CardBase>
+						</li>
+					);
+				})}
+			</ol>
 			<div
 				style={{
 					display: 'flex',
@@ -77,122 +300,8 @@ function App() {
 						flexDirection: 'column',
 					}}
 				>
-					<h2>{masterDeck.name}</h2>
-					<CardSelectList
-						style={{ flexGrow: 1 }}
-						cards={masterDeck.cards}
-						selectedCards={masterDeckSelection}
-						setSelectedCards={setMasterDeckSelection}
-						drawCount={drawCount}
-					/>
-				</div>
-
-				<div
-					style={{
-						display: 'flex',
-						flexDirection: 'column',
-						justifyContent: 'flex-start',
-						alignItems: 'flex-start',
-						gap: '1rem',
-						marginTop: '5rem',
-					}}
-				>
-					<button
-						onClick={() => {
-							const { from, to } = Deck.moveCards(
-								masterDeck,
-								discardDeck,
-								masterDeckSelection,
-								true
-							);
-							setMasterDeck(from);
-							setDiscardDeck(to);
-							setMasterDeckSelection({});
-						}}
-						disabled={Object.values(masterDeckSelection).every(
-							(count) => count === 0
-						)}
-					>
-						Move to discard -&gt;
-					</button>
-					<button
-						onClick={() => {
-							const { from, to } = Deck.moveCards(
-								discardDeck,
-								masterDeck,
-								discardDeckSelection,
-								false
-							);
-							setDiscardDeck(from);
-							setMasterDeck(to);
-							setDiscardDeckSelection({});
-						}}
-						disabled={Object.values(discardDeckSelection).every(
-							(count) => count === 0
-						)}
-					>
-						&lt;- Move to Master Deck
-					</button>
-
-					<button
-						onClick={() => {
-							const selection = Selection.from(discardDeck.cards);
-
-							const { from, to } = Deck.moveCards(
-								discardDeck,
-								masterDeck,
-								selection,
-								false
-							);
-
-							setDiscardDeck(from);
-							setMasterDeck(to);
-						}}
-					>
-						&lt;&lt;- Move all to Master Deck
-					</button>
-
-					<button
-						onClick={() => {
-							if (!window.confirm('Are you sure?')) return;
-
-							let newMasterDeck = Deck.removeCards(
-								masterDeck.cards,
-								masterDeckSelection,
-								false
-							);
-
-							setMasterDeck({
-								name: 'Discard Deck',
-								cards: newMasterDeck,
-							});
-							setMasterDeckSelection({});
-						}}
-					>
-						Delete
-					</button>
-
-					<button
-						onClick={() => {
-							setAddCardPopupVisible(true);
-						}}
-					>
-						Add New
-					</button>
-
-					<button
-						onClick={() => {
-							if (!window.confirm('Are you sure?')) return;
-
-							//TODO: use "default deck" rather than "saved" deck
-							setMasterDeck(Deck.clone(config.masterDeck));
-							setMasterDeckSelection({});
-							setDiscardDeck({ ...discardDeck, cards: [] });
-							setDiscardDeckSelection({});
-						}}
-					>
-						Reset
-					</button>
+					<h2>{infectionDeck.name}</h2>
+					<DeckView deck={infectionDeck} />
 				</div>
 				<div
 					style={{
@@ -203,28 +312,53 @@ function App() {
 					}}
 				>
 					<h2>{discardDeck.name}</h2>
-					<CardSelectList
-						style={{ flexGrow: 1 }}
-						cards={discardDeck.cards}
-						selectedCards={discardDeckSelection}
-						setSelectedCards={setDiscardDeckSelection}
-					/>
+					<DeckView deck={discardDeck} />
 				</div>
 			</div>
-			<Popup
-				visible={addCardPopupVisible}
-				setVisible={setAddCardPopupVisible}
-			>
-				<AddCardForm
-					onAddCard={(card) => {
-						setMasterDeck({
-							...masterDeck,
-							cards: Deck.simplify(...masterDeck.cards, card),
-						});
-						setAddCardPopupVisible(false);
-					}}
+			<Popup visible={topDrawFormVisible}>
+				<SelectCardForm
+					options={nextDrawOptions}
 					onCancel={() => {
-						setAddCardPopupVisible(false);
+						setTopDrawFormVisible(false);
+					}}
+					onSelectCard={(card) => {
+						const top = infectionDeck.remove(0, 1)[0]!;
+						if (top instanceof Card && top !== card) {
+							throw new Error('Unexpected card selected');
+						}
+
+						if (top instanceof Assortment) {
+							Assortment.subtract(
+								top,
+								new Assortment(new Map([[card, 1]]))
+							);
+						}
+
+						discardDeck.insert([card], -1);
+					}}
+				/>
+			</Popup>
+			<Popup visible={bottomDrawFormVisible}>
+				<SelectCardForm
+					options={nextBottomDrawOptions}
+					onCancel={() => {
+						setBottomDrawFormVisible(false);
+					}}
+					onSelectCard={(card) => {
+						const top = infectionDeck.remove(-1, 1)[0]!;
+						if (top instanceof Card && top !== card) {
+							throw new Error('Unexpected card selected');
+						}
+
+						if (top instanceof Assortment) {
+							Assortment.subtract(
+								top,
+								new Assortment(new Map([[card, 1]]))
+							);
+						}
+
+						discardDeck.insert([card], -1);
+						setBottomDrawFormVisible(false);
 					}}
 				/>
 			</Popup>
@@ -232,117 +366,157 @@ function App() {
 	);
 }
 
-function AddCardForm({
-	onAddCard,
+function SelectCardForm({
+	options,
 	onCancel,
+	onSelectCard,
 }: {
-	onAddCard: (card: Card) => void;
+	options: Card[];
 	onCancel: () => void;
+	onSelectCard: (card: Card) => void;
 }) {
-	const [name, setName] = useState('');
-	const [type, setType] = useState('City');
-	const [count, setCount] = useState(1);
+	const [cardName, setCardName] = useState(options[0]!.name);
 
-	const handleSubmit = useCallback(() => {
-		switch (type) {
-			case 'City':
-				if (name === '') return;
-				const hasImage = cities.includes(name);
-				onAddCard({
-					name,
-					type: 'City',
-					count,
-					image: hasImage ? `/images/cities/${name}.png` : undefined,
-				});
-				break;
-			case 'Epidemic':
-				onAddCard({
-					name: 'Epidemic',
-					type: 'Epidemic',
-					count,
-					image: '/images/epidemic.png',
-				});
-				break;
-
-			case 'Other':
-				if (name === '') return;
-				onAddCard({ name, type: 'Other', count });
-				break;
+	useEffect(() => {
+		if (options.length === 0) {
+			onCancel();
+			return;
 		}
-	}, [onAddCard, name, type, count]);
+		if (!options.some((card) => card.name === cardName)) {
+			setCardName(options[0].name);
+		}
+	}, [options]);
 
 	return (
-		<CardBase>
-			<form
-				onSubmit={(e) => {
-					e.preventDefault();
-					handleSubmit();
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+
+				const card = options.find((card) => card.name === cardName)!;
+				onSelectCard(card);
+			}}
+		>
+			<select
+				value={cardName}
+				onChange={(e) => {
+					setCardName(e.target.value);
 				}}
 			>
-				<datalist id="cities">
-					{cities.map((city) => (
-						<option value={city} key={city} />
-					))}
-				</datalist>
+				{options.map((card) => (
+					<option value={card.name} key={card.name}>
+						{card.name}
+					</option>
+				))}
+			</select>
+			<button type="submit">Draw</button>
+			<button type="button" onClick={onCancel}>
+				Done
+			</button>
+		</form>
+	);
+}
 
-				<label>
-					Type
-					<select
-						required
-						value={type}
-						onChange={(e) => {
-							setType(e.target.value);
-						}}
-					>
-						<option value="City">City</option>
-						<option value="Epidemic">Epidemic</option>
-						<option value="Other">Other</option>
-					</select>
-				</label>
-				{type === 'City' && (
-					<label>
-						Name
-						<input
-							required
-							type="text"
-							list={type === 'City' ? 'cities' : undefined}
-							value={name}
-							onChange={(e) => {
-								setName(e.target.value);
+interface AssortedCardGroup {
+	card: IReadonlyPossibleCard;
+	count: number;
+}
+
+function groupByAssortment(
+	cards: readonly IReadonlyPossibleCard[]
+): AssortedCardGroup[] {
+	const result: AssortedCardGroup[] = [];
+
+	for (const card of cards) {
+		if (result.length === 0) {
+			result.push({ count: 1, card });
+			continue;
+		} else if (result[result.length - 1].card === card) {
+			result[result.length - 1].count++;
+		} else {
+			result.push({ count: 1, card });
+		}
+	}
+
+	return result;
+}
+
+function getAssortmentColors(
+	deck: readonly IReadonlyPossibleCard[]
+): Map<IAssortment, string> {
+	const assortments = new Map<IAssortment, string>();
+
+	for (const card of deck) {
+		if (card instanceof Assortment) {
+			if (!assortments.has(card)) {
+				assortments.set(card, getNthNiceColor(assortments.size));
+			}
+		}
+	}
+
+	return assortments;
+}
+function DeckView({ deck }: { deck: IDeck }) {
+	const deckNonce = useMutable(deck);
+	const groupedCards = useMemo(
+		() => groupByAssortment(deck.cards),
+		[deckNonce]
+	);
+
+	const colors = useMemo(() => getAssortmentColors(deck.cards), [deckNonce]);
+
+	return (
+		<div>
+			<ol>
+				{groupedCards.map(({ card, count }, index) => (
+					<li key={index}>
+						<CardBase
+							style={{
+								height:
+									(1 + Math.min(count, 6) * 0.75).toFixed(1) +
+									'rem',
+								backgroundColor:
+									card instanceof Assortment
+										? colors.get(card)
+										: undefined,
 							}}
-						/>
-					</label>
-				)}
-
-				<label>
-					Count
-					<input
-						required
-						type="number"
-						min="1"
-						value={count}
-						onChange={(e) => {
-							setCount(parseInt(e.target.value));
-						}}
-					/>
-				</label>
-
-				<button type="submit">Add</button>
-				<button type="button" onClick={onCancel}>
-					Cancel
-				</button>
-			</form>
-		</CardBase>
+						>
+							{card instanceof Card
+								? card.name
+								: `1 of ${Assortment.getTotalCardCount(
+										card
+								  )} cards`}{' '}
+							x{count}
+							{card instanceof Assortment &&
+								card.cards.size < 5 && (
+									<>
+										{' '}
+										(
+										{[...card.cards.entries()]
+											.map(
+												([c, count]) =>
+													`${c.name}${
+														count > 1
+															? ` x${count}`
+															: ''
+													}`
+											)
+											.join(', ')}
+										)
+									</>
+								)}
+						</CardBase>
+					</li>
+				))}
+			</ol>
+		</div>
 	);
 }
 
 function Popup({
 	visible,
-	setVisible,
 	children,
 }: {
 	visible: boolean;
-	setVisible: (visible: boolean) => void;
 	children: React.ReactNode;
 }) {
 	return (
