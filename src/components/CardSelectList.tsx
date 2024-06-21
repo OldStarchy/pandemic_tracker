@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useState } from 'react';
+import { Assortment } from '../lib/Assortment';
 import { Card } from '../lib/Card';
-import { Deck } from '../lib/Deck';
 import { Selection } from '../lib/Selection';
 import { CardSelectToggle } from './CardSelectToggle';
 
@@ -128,7 +128,7 @@ export function CardSelectList({
 				{filteredCards.map((card) => {
 					const drawChance =
 						drawCount &&
-						Deck.calculateDrawChance(
+						Assortment.calculateDrawChance(
 							cards
 								.map((c) => c.count)
 								.reduce((a, b) => a + b, 0),

@@ -1,5 +1,5 @@
 import { cities as defaultCities } from '../data/cities';
-import { Deck } from './Deck';
+import { Assortment } from './Assortment';
 
 export class Config {
 	#cities: string[] | null;
@@ -12,9 +12,9 @@ export class Config {
 		this.#cities = cities;
 	}
 
-	#mainDeck: Deck;
+	#mainDeck: Assortment;
 
-	get masterDeck(): Deck {
+	get masterDeck(): Assortment {
 		return this.#mainDeck;
 	}
 

@@ -1,16 +1,28 @@
-import { Card } from './Card';
-import { Selection } from './Selection';
+
+export interface PossibleCard {
+	assortment: Assortment;
+}
 
 export interface Deck {
 	readonly name: string;
 	cards: Card[];
 }
 
-export namespace Deck {
-	export function clone(deck: Deck): Deck {
+import {Card} from './Card';
+import {Selection} from './Selection';
+
+export interface Assortment {
+	readonly cards: Map<Card, number>;
+}
+
+export namespace Assortment {
+	export function clone(deck: Assortment): Assortment {
 		return {
-			name: deck.name,
-			cards: deck.cards.map((card) => Card.clone(card)),
+			cards: new Map(
+				Array.from(deck.cards.entries()).map(
+					([card, count]) => [Card.clone(card), count]
+				)
+			),
 		};
 	}
 
@@ -52,13 +64,13 @@ export namespace Deck {
 	}
 
 	export function moveCards(
-		from: Deck,
-		to: Deck,
+		from: Assortment,
+		to: Assortment,
 		selection: Selection,
 		keepEmpty: boolean
-	): { from: Deck; to: Deck } {
+	): { from: Assortment; to: Assortment } {
 		const moved: Record<string, Card> = {};
-		let newFromCards = from.cards.map((card) => {
+		let newFromCards = Array.from(from.cards).map((card) => {
 			const transferCount = selection[card.name] ?? 0;
 
 			if (transferCount > card.count) {
@@ -82,7 +94,7 @@ export namespace Deck {
 			return { to, from } as const;
 		}
 
-		const newToCards = to.cards.map((card) => {
+		const newToCards = Array.from(to.cards).map((card) => {
 			const movedCount = moved[card.name];
 
 			if ((movedCount?.count ?? 0) === 0) return card;
@@ -97,8 +109,8 @@ export namespace Deck {
 		newToCards.push(...Object.values(moved));
 
 		return {
-			from: { ...from, cards: newFromCards },
-			to: { ...to, cards: newToCards },
+			from: { ...from, cards: new Set(newFromCards) },
+			to: { ...to, cards: new Set(newToCards) },
 		} as const;
 	}
 

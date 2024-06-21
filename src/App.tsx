@@ -3,23 +3,23 @@ import './App.css';
 import { CardBase } from './components/CardBase';
 import { CardSelectList } from './components/CardSelectList';
 import { cities } from './data/cities';
+import { Assortment } from './lib/Assortment';
 import { Card } from './lib/Card';
 import { Config } from './lib/Config';
-import { Deck } from './lib/Deck';
 import { Selection } from './lib/Selection';
 
 function App() {
 	const config = useMemo(() => Config.createDefault(), []);
 
-	const [masterDeck, setMasterDeck] = useState<Deck>(() =>
-		Deck.clone(config.masterDeck)
+	const [masterDeck, setMasterDeck] = useState<Assortment>(() =>
+		Assortment.clone(config.masterDeck)
 	);
 
 	const [masterDeckSelection, setMasterDeckSelection] = useState<
 		Record<string, number>
 	>({});
 
-	const [discardDeck, setDiscardDeck] = useState<Deck>(() => ({
+	const [discardDeck, setDiscardDeck] = useState<Assortment>(() => ({
 		name: 'Discard Deck',
 		cards: [],
 	}));
@@ -99,7 +99,7 @@ function App() {
 				>
 					<button
 						onClick={() => {
-							const { from, to } = Deck.moveCards(
+							const { from, to } = Assortment.moveCards(
 								masterDeck,
 								discardDeck,
 								masterDeckSelection,
@@ -117,7 +117,7 @@ function App() {
 					</button>
 					<button
 						onClick={() => {
-							const { from, to } = Deck.moveCards(
+							const { from, to } = Assortment.moveCards(
 								discardDeck,
 								masterDeck,
 								discardDeckSelection,
@@ -138,7 +138,7 @@ function App() {
 						onClick={() => {
 							const selection = Selection.from(discardDeck.cards);
 
-							const { from, to } = Deck.moveCards(
+							const { from, to } = Assortment.moveCards(
 								discardDeck,
 								masterDeck,
 								selection,
@@ -156,7 +156,7 @@ function App() {
 						onClick={() => {
 							if (!window.confirm('Are you sure?')) return;
 
-							let newMasterDeck = Deck.removeCards(
+							let newMasterDeck = Assortment.removeCards(
 								masterDeck.cards,
 								masterDeckSelection,
 								false
@@ -185,7 +185,7 @@ function App() {
 							if (!window.confirm('Are you sure?')) return;
 
 							//TODO: use "default deck" rather than "saved" deck
-							setMasterDeck(Deck.clone(config.masterDeck));
+							setMasterDeck(Assortment.clone(config.masterDeck));
 							setMasterDeckSelection({});
 							setDiscardDeck({ ...discardDeck, cards: [] });
 							setDiscardDeckSelection({});
@@ -219,7 +219,10 @@ function App() {
 					onAddCard={(card) => {
 						setMasterDeck({
 							...masterDeck,
-							cards: Deck.simplify(...masterDeck.cards, card),
+							cards: Assortment.simplify(
+								...masterDeck.cards,
+								card
+							),
 						});
 						setAddCardPopupVisible(false);
 					}}

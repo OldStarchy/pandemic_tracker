@@ -1,24 +1,16 @@
 import fuzzy from 'fuzzy';
 
+/**
+ * An idempotent Card object. Care shouild be taken not to duplicate cards.
+ */
 export interface Card {
 	readonly name: string;
 	readonly description?: string;
 	readonly type: string;
 	readonly image?: string;
-	count: number;
 }
 
 export namespace Card {
-	export function clone(card: Card): Card {
-		return {
-			name: card.name,
-			description: card.description,
-			type: card.type,
-			image: card.image,
-			count: card.count,
-		};
-	}
-
 	export function select(
 		cards: Card[],
 		filter: { name: string; fuzzy?: boolean } | { type: string }
