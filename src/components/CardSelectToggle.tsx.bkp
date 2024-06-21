@@ -24,7 +24,9 @@ export function CardSelectToggle({
 				setVisibleUnselected(card.count - selected);
 			}, 100);
 
-			return () => clearTimeout(timeout);
+			return () => {
+				clearTimeout(timeout);
+			};
 		}
 	}, [selected, card.count]);
 
@@ -94,7 +96,6 @@ export function CardSelectToggle({
 					}}
 				>
 					<h3 style={{ flexGrow: 1 }}>{card.name}</h3>
-					<p>{card.description}</p>
 					<p>{card.type}</p>
 					<p>x{selected > 0 ? selected : card.count}</p>
 				</div>

@@ -36,7 +36,6 @@ export function CardNoSelect({ card }: { card: Card }) {
 					}}
 				>
 					<h3 style={{ flexGrow: 1 }}>{card.name}</h3>
-					<p>{card.description}</p>
 					<p>{card.type}</p>
 					<p>x{card.count}</p>
 				</div>

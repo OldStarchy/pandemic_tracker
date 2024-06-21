@@ -1,52 +1,94 @@
 import { Card } from './Card';
+import { IPossibleCard } from './Deck';
+import { IMutable, Mutable } from './Mutable';
 
 /**
  * An unordered set of cards stored as a map of `Card` -> count.
  */
-export type Assortment = Map<Card, number>;
+export interface IAssortment extends IMutable {
+	cards: Map<Card, number>;
+}
+
+export interface IReadonlyAssortment {
+	cards: ReadonlyMap<Card, number>;
+}
+
+export class Assortment extends Mutable implements IAssortment {
+	constructor(public cards: Map<Card, number>) {
+		super();
+	}
+}
+
+function pickRandom<T>(array: T[]): T {
+	return array[Math.floor(Math.random() * array.length)];
+}
 
 export namespace Assortment {
-	export function clone(deck: Assortment): Assortment {
-		return new Map(deck);
+	export function getCardOptions(possible: IPossibleCard): Card[] {
+		if (possible instanceof Card) return [possible];
+
+		return [...possible.cards.keys()];
 	}
 
-	/**
-	 * Creates a Assortment that contains all cards from both `a` and `b`.
-	 */
-	export function merge(a: Assortment, b: Assortment): Assortment {
-		const result: Assortment = new Map(a);
-		for (const [card, count] of b) {
-			result.set(card, (result.get(card) ?? 0) + count);
+	export function reveal(possible: IPossibleCard): Card {
+		if (possible instanceof Card) {
+			return possible;
 		}
-		return result;
+
+		const anyCard = pickRandom([...possible.cards.keys()]);
+
+		subtract(possible, new Assortment(new Map([[anyCard, 1]])));
+
+		return anyCard;
+	}
+	export function clone(deck: IReadonlyAssortment): IAssortment {
+		return new Assortment(new Map(deck.cards));
 	}
 
 	/**
-	 * Creates an Assortment that contains all cards from `b` except those in `a`.
-	 *
-	 * @throws {Error} If `b` contains cards not in `a`.
+	 * Copies all cards from {@link from} to {@link into}. {@link from} is not modified.
 	 */
-	export function subtract(a: Assortment, b: Assortment): Assortment {
-		const result: Assortment = new Map(a);
-		for (const [name, count] of b) {
-			const resultCount = (result.get(name) ?? 0) - count;
+	export function merge(into: IAssortment, from: IReadonlyAssortment): void {
+		for (const [card, count] of from.cards) {
+			into.cards.set(card, (into.cards.get(card) ?? 0) + count);
+		}
 
-			if (resultCount > 0) {
-				result.set(name, resultCount);
-			} else if (resultCount === 0) {
-				result.delete(name);
-			} else {
-				throw new Error('Subtracting more cards than available');
+		into.triggerChange();
+	}
+
+	/**
+	 * Removes {@link b} from {@link from}. {@link from} is not modified.
+	 *
+	 * @throws {Error} If {@link b} contains cards not in {@link from}.
+	 */
+	export function subtract(from: IAssortment, b: IReadonlyAssortment): void {
+		let changed = false;
+
+		try {
+			for (const [name, count] of b.cards) {
+				const resultCount = (from.cards.get(name) ?? 0) - count;
+
+				if (resultCount > 0) {
+					from.cards.set(name, resultCount);
+					changed = true;
+				} else if (resultCount === 0) {
+					from.cards.delete(name);
+					changed = true;
+				} else {
+					throw new Error('Subtracting more cards than available');
+				}
+			}
+		} finally {
+			if (changed) {
+				from.triggerChange();
 			}
 		}
-
-		return result;
 	}
 
 	/**
-	 * Finds all common cards between `a` and `b`.
+	 * Finds all common cards between {@link a} and {@link b}.
 	 *
-	 * Can be used as a safeguard before subtracting if `b` has more cards than `a`.
+	 * Can be used as a safeguard before subtracting if {@link b} has more cards than {@link a}.
 	 * eg.
 	 * ```
 	 * declare const a: Assortment;
@@ -56,11 +98,14 @@ export namespace Assortment {
 	 * const aMinusB = Assortment.subtract(a, common);
 	 * ```
 	 */
-	export function intersect(a: Assortment, b: Assortment): Assortment {
-		const result: Assortment = new Map();
-		for (const [card, count] of a) {
-			if (b.has(card)) {
-				result.set(card, Math.min(count, b.get(card)!));
+	export function intersect(
+		a: IReadonlyAssortment,
+		b: IReadonlyAssortment
+	): IAssortment {
+		const result: IAssortment = new Assortment(new Map());
+		for (const [card, count] of a.cards) {
+			if (b.cards.has(card)) {
+				result.cards.set(card, Math.min(count, b.cards.get(card)!));
 			}
 		}
 		return result;
@@ -72,17 +117,12 @@ export namespace Assortment {
 	 * @throws {Error} If `from` does not contain all the selected cards.
 	 */
 	export function moveCards(
-		from: Assortment,
-		to: Assortment,
-		selection: Assortment
-	): { from: Assortment; to: Assortment } | null {
-		const newFrom = subtract(from, selection);
-		const newTo = merge(to, selection);
-
-		return {
-			from: newFrom,
-			to: newTo,
-		};
+		from: IAssortment,
+		to: IAssortment,
+		selection: IReadonlyAssortment
+	): void {
+		subtract(from, selection);
+		merge(to, selection);
 	}
 
 	/**
@@ -90,20 +130,18 @@ export namespace Assortment {
 	 * Any cards that were not in `from` are returned as `remainder`.
 	 */
 	export function tryMoveCards(
-		from: Assortment,
-		to: Assortment,
-		selection: Assortment
-	): { from: Assortment; to: Assortment; remainder: Assortment } | null {
+		from: IAssortment,
+		to: IAssortment,
+		selection: IReadonlyAssortment
+	): IAssortment {
 		const common = intersect(from, selection);
-		const newFrom = subtract(from, common);
-		const newTo = merge(to, common);
-		const remainder = subtract(selection, common);
+		subtract(from, common);
+		merge(to, common);
 
-		return {
-			from: newFrom,
-			to: newTo,
-			remainder,
-		};
+		const remainder = clone(selection);
+		subtract(remainder, common);
+
+		return remainder;
 	}
 
 	/**
@@ -141,5 +179,26 @@ export namespace Assortment {
 					)
 			);
 		}
+	}
+
+	/**
+	 * Returns the total number of cards in the assortment.
+	 */
+	export function getTotalCardCount(assortment: IReadonlyAssortment): number {
+		let total = 0;
+		for (const count of assortment.cards.values()) {
+			total += count;
+		}
+		return total;
+	}
+
+	/**
+	 * Returns the number of {@link card} in the assortment.
+	 */
+	export function getCardCount(
+		assortment: IReadonlyAssortment,
+		card: Card
+	): number {
+		return assortment.cards.get(card) ?? 0;
 	}
 }
