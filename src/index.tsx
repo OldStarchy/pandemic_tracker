@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { MainLayout } from './components/layout/MainLayout';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 
@@ -13,7 +14,9 @@ console.log(process.env.FOOBAR);
 
 root.render(
 	<React.StrictMode>
-		<App />
+		<MainLayout>
+			<App />
+		</MainLayout>
 	</React.StrictMode>
 );
 

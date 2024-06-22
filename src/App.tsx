@@ -15,11 +15,14 @@ import { Card } from './lib/Card';
 import { Deck, IDeck, IPossibleCard, IReadonlyPossibleCard } from './lib/Deck';
 import { IMutable } from './lib/Mutable';
 
-const cityCards = cities
-	.slice(0, 10)
-	.map((city) => Card.get({ name: city, type: 'City' }));
+const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
 const shuffledCityCards = new Assortment(
-	new Map(cityCards.map((card) => [card, 2]))
+	new Map(
+		cityCards.map((card) => [
+			card,
+			cities[card.name as keyof typeof cities],
+		])
+	)
 );
 const infectionDeck = new Deck('Infection Deck');
 infectionDeck.insert(
@@ -63,6 +66,9 @@ function App() {
 	const [drawCount, setDrawCountRaw] = useState(1);
 	const [topDrawFormVisible, setTopDrawFormVisible] = useState(false);
 	const [bottomDrawFormVisible, setBottomDrawFormVisible] = useState(false);
+	const [editDeckFormVisible, setEditDeckFormVisible] = useState(false);
+
+	const [editDeckData, setEditDeckData] = useState<string>('');
 
 	const setDrawCount = useCallback<Dispatch<SetStateAction<number>>>(
 		(count) => {
@@ -91,15 +97,17 @@ function App() {
 				return cards;
 			}, new Set<Card>());
 
-		return [...allTheCards].map((card) => {
-			const probability = Deck.calculateDrawChance(
-				infectionDeck,
-				card,
-				drawCount
-			);
+		return [...allTheCards]
+			.map((card) => {
+				const probability = Deck.calculateDrawChance(
+					infectionDeck,
+					card,
+					drawCount
+				);
 
-			return { card, probability };
-		});
+				return { card, probability };
+			})
+			.sort((a, b) => b.probability - a.probability);
 	}, [infectionNonce, drawCount]);
 
 	const colors = useMemo(
@@ -242,6 +250,7 @@ function App() {
 							0
 						);
 						infecDec.remove(0, infecDec.cards.length);
+						infectionDeck.name = infecDec.name;
 
 						const discDec = Deck.fromJson(json.discardDeck);
 						discardDeck.remove(0, discardDeck.cards.length);
@@ -250,6 +259,7 @@ function App() {
 							0
 						);
 						discDec.remove(0, discDec.cards.length);
+						discardDeck.name = discDec.name;
 
 						setDrawCount(json.drawCount);
 					};
@@ -257,6 +267,20 @@ function App() {
 				}}
 			>
 				Import
+			</button>
+			<button
+				onClick={() => {
+					const data = JSON.stringify(
+						infectionDeck.toJson(),
+						null,
+						2
+					);
+
+					setEditDeckData(data);
+					setEditDeckFormVisible(true);
+				}}
+			>
+				Edit Infction Deck
 			</button>
 
 			<ol>
@@ -316,6 +340,38 @@ function App() {
 					<DeckView deck={discardDeck} />
 				</div>
 			</div>
+			<Popup visible={editDeckFormVisible}>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						const json = Deck.fromJson(JSON.parse(editDeckData));
+						infectionDeck.remove(0, infectionDeck.cards.length);
+						infectionDeck.insert(
+							json.cards as unknown as IPossibleCard[],
+							0
+						);
+						infectionDeck.name = json.name;
+						setEditDeckFormVisible(false);
+					}}
+				>
+					<textarea
+						value={editDeckData}
+						style={{ width: '90vw', height: '80vh' }}
+						onChange={(e) => {
+							setEditDeckData(e.target.value);
+						}}
+					></textarea>
+					<button type="submit">Save</button>
+					<button
+						type="button"
+						onClick={() => {
+							setEditDeckFormVisible(false);
+						}}
+					>
+						Cancel
+					</button>
+				</form>
+			</Popup>
 			<Popup visible={topDrawFormVisible}>
 				<SelectCardForm
 					options={nextDrawOptions}
@@ -525,6 +581,8 @@ function Popup({
 			style={{
 				position: 'fixed',
 				inset: 0,
+				width: '100vw',
+				height: '100vh',
 				background: '#0008',
 				display: visible ? 'flex' : 'none',
 				justifyContent: 'center',

@@ -26,7 +26,7 @@ export class Deck extends Mutable implements IDeck {
 
 	#trackedAssortments = new Map<IAssortment, () => void>();
 
-	constructor(readonly name: string) {
+	constructor(public name: string) {
 		super();
 		this.#cards = [];
 	}
@@ -46,22 +46,36 @@ export class Deck extends Mutable implements IDeck {
 			}
 		});
 
-		const cards = this.cards.map((card) => {
-			if (card instanceof Card) {
-				return { name: card.name, type: card.type };
-			}
+		const cards = this.cards
+			.map((card) => {
+				if (card instanceof Card) {
+					return card.name;
+				}
 
-			const id = ids.get(card as IAssortment)!;
-			return id;
-		});
+				const id = ids.get(card as IAssortment)!;
+				return id;
+			})
+			.reduce((acc, card) => {
+				const top = acc[acc.length - 1];
+
+				if (!top || top.item !== card) {
+					acc.push({ item: card, count: 1 });
+				} else {
+					top.count++;
+				}
+				return acc;
+			}, [] as { item: string | number; count: number }[]);
 
 		return {
 			name: this.name,
 			cards,
 			assortments: [...ids.entries()].map(([assortment, id]) => {
-				const cards = [...assortment.cards.entries()].map(
-					([card, count]) => ({ name: card.name, count })
-				);
+				const cards = [...assortment.cards.entries()]
+					.sort((a, b) => a[0].name.localeCompare(b[0].name))
+					.reduce((acc, [card, count]) => {
+						acc[card.name] = count;
+						return acc;
+					}, {} as Record<string, number>);
 				return { id, cards };
 			}),
 		};
@@ -74,20 +88,26 @@ export class Deck extends Mutable implements IDeck {
 
 		for (const assortment of json.assortments) {
 			const cards = new Map<Card, number>();
-			for (const card of assortment.cards) {
-				cards.set(Card.get(card), card.count);
+			for (const [card, count] of Object.entries(assortment.cards) as [
+				string,
+				number
+			][]) {
+				cards.set(Card.get({ name: card }), count);
 			}
 			assortments.set(assortment.id, new Assortment(cards));
 		}
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const cards = json.cards.map((card: any) => {
-			if (typeof card === 'number') {
-				return assortments.get(card)!;
-			}
+		const cards = json.cards.flatMap(
+			(item: { item: string | number; count: number }) => {
+				const val =
+					typeof item.item === 'number'
+						? assortments.get(item.item)!
+						: Card.get({ name: item.item });
 
-			return Card.get(card);
-		});
+				return new Array(item.count).fill(val);
+			}
+		);
 
 		deck.insert(cards, 0);
 
