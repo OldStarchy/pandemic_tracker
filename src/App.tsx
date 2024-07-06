@@ -270,7 +270,14 @@ function App() {
 			>
 				Edit Infction Deck
 			</button>
-
+			<button
+				onClick={() => {
+					throw new Error();
+				}}
+			>
+				Throw an exception
+			</button>
+			;
 			<ol>
 				{cardDrawProbabilities.map(({ card, probability }, index) => {
 					const color = [...colors.entries()]

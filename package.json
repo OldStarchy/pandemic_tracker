@@ -4,6 +4,8 @@
   "private": true,
   "homepage": "https://OldStarchy.github.io/pandemic_tracker",
   "dependencies": {
+    "@sentry/cli": "^2.32.1",
+    "@sentry/react": "^8.15.0",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
@@ -21,9 +23,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && yarn sentry:sourcemaps",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org nicholas-sorokin --project pandemic-tracker ./build && sentry-cli sourcemaps upload --org nicholas-sorokin --project pandemic-tracker ./build"
   },
   "eslintConfig": {
     "extends": [
@@ -47,8 +50,10 @@
     "styled-components": "^5"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@eslint/js": "^9.5.0",
     "eslint": "^9.6.0",
+    "eslint-config-react-app": "^7.0.1",
     "eslint-plugin-react": "^7.34.3",
     "eslint-plugin-react-hooks": "^4.6.2",
     "globals": "^15.6.0",
