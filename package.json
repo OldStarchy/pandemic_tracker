@@ -23,7 +23,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && yarn sentry:sourcemaps",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org nicholas-sorokin --project pandemic-tracker ./build && sentry-cli sourcemaps upload --org nicholas-sorokin --project pandemic-tracker ./build"
