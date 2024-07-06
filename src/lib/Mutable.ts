@@ -1,37 +1,16 @@
-export interface IMutable {
-	onChange(handler: () => void): () => void;
-	triggerChange(): void;
-}
+import { useCallback, useEffect, useState } from 'react';
+import { Emitter } from './Emitter';
 
-export abstract class Mutable {
-	private changeListeners = new Set<() => void>();
-	onChange(handler: () => void): () => void {
-		this.changeListeners.add(handler);
+export const Mutable = Emitter as typeof Emitter<void>;
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type Mutable = Emitter<void>;
 
-		return () => this.changeListeners.delete(handler);
-	}
+export function useMutable(mutable: Mutable): Record<string, never> {
+	const [nonce, setNonce] = useState({});
 
-	#triggering = false;
-	#doTriggerChange(): void {
-		if (this.#triggering) return;
-		this.#triggering = true;
-		try {
-			for (const handler of this.changeListeners) {
-				handler();
-			}
-		} finally {
-			this.#triggering = false;
-		}
-	}
+	const onChange = useCallback(() => void setNonce({}), []);
 
-	#triggerTimeout: ReturnType<typeof setTimeout> | undefined;
-	triggerChange(): void {
-		if (this.#triggerTimeout) {
-			clearTimeout(this.#triggerTimeout);
-		}
-		this.#triggerTimeout = setTimeout(() => {
-			this.#doTriggerChange();
-			this.#triggerTimeout = undefined;
-		}, 0);
-	}
+	useEffect(() => mutable.onChange(onChange), [mutable, onChange]);
+
+	return nonce;
 }

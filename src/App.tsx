@@ -13,7 +13,7 @@ import { cities } from './data/cities';
 import { Assortment, IAssortment } from './lib/Assortment';
 import { Card } from './lib/Card';
 import { Deck, IDeck, IPossibleCard, IReadonlyPossibleCard } from './lib/Deck';
-import { IMutable } from './lib/Mutable';
+import { useMutable } from './lib/Mutable';
 
 const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
 const shuffledCityCards = new Assortment(
@@ -39,18 +39,6 @@ function getNthNiceColor(n: number): string {
 	const hue = (n * goldenRatioConjugate) % 1;
 	const color = `hsl(${hue * 360}, 100%, 10%)`;
 	return color;
-}
-
-export function useMutable(mutable: IMutable): Record<string, never> {
-	const [nonce, setNonce] = useState<Record<string, never>>({});
-
-	const onChange = useCallback(() => {
-		setNonce({});
-	}, []);
-
-	useEffect(() => mutable.onChange(onChange), [mutable, onChange]);
-
-	return nonce;
 }
 
 function createStripeyBackground(colors: string[]): string {

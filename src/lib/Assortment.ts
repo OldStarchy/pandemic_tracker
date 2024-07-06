@@ -1,11 +1,11 @@
 import { Card } from './Card';
 import { IPossibleCard } from './Deck';
-import { IMutable, Mutable } from './Mutable';
+import { Mutable } from './Mutable';
 
 /**
  * An unordered set of cards stored as a map of `Card` -> count.
  */
-export interface IAssortment extends IMutable {
+export interface IAssortment extends Mutable {
 	cards: Map<Card, number>;
 }
 

@@ -1,11 +1,11 @@
 import { Assortment, IAssortment, IReadonlyAssortment } from './Assortment';
 import { Card } from './Card';
-import { IMutable, Mutable } from './Mutable';
+import { Mutable } from './Mutable';
 
 export type IPossibleCard = Card | IAssortment;
 export type IReadonlyPossibleCard = Card | IReadonlyAssortment;
 
-export interface IDeck extends IMutable {
+export interface IDeck extends Mutable {
 	readonly name: string;
 	cards: readonly IPossibleCard[];
 	insert(cards: IPossibleCard[], index: number): void;
