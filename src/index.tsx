@@ -5,6 +5,7 @@ import App from './App';
 import { MainLayout } from './components/layout/MainLayout';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
+import './reset.css';
 
 Sentry.init({
 	dsn: 'https://f90fa035261e910e125efd9ec29e8fd7@o4506370894200832.ingest.us.sentry.io/4507555106521088',
