@@ -10,7 +10,7 @@ import {
 	faShuffle,
 	faStar,
 } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
 	Dispatch,
 	SetStateAction,
@@ -20,17 +20,18 @@ import {
 	useState,
 } from 'react';
 import './App.css';
-import { CardBase } from './components/CardBase';
-import { DeckView } from './components/DeckView';
-import { Popup } from './components/Popup';
-import { Button } from './components/common/Button';
-import { Input } from './components/common/Input';
-import { H2 } from './components/common/Typography';
-import { cities } from './data/cities';
-import { Assortment, IAssortment } from './lib/Assortment';
-import { Card } from './lib/Card';
-import { Deck, IPossibleCard, IReadonlyPossibleCard } from './lib/Deck';
-import { useMutable } from './lib/Mutable';
+import {CardBase} from './components/CardBase';
+import {DeckView} from './components/DeckView';
+import {Popup} from './components/Popup';
+import {Button} from './components/common/Button';
+import {Input} from './components/common/Input';
+import {Select} from './components/common/Select';
+import {H2} from './components/common/Typography';
+import {cities} from './data/cities';
+import {Assortment, IAssortment} from './lib/Assortment';
+import {Card} from './lib/Card';
+import {Deck, IPossibleCard, IReadonlyPossibleCard} from './lib/Deck';
+import {useMutable} from './lib/Mutable';
 
 const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
 const shuffledCityCards = new Assortment(
@@ -185,7 +186,13 @@ function App() {
 			</section>
 			<section>
 				<H2>Draw Chance</H2>
-				<ol>
+				<ol
+					style={{
+						display: 'flex',
+						flexDirection: 'column',
+						gap: '0.25rem',
+					}}
+				>
 					{cardDrawProbabilities.map(
 						({ card, probability }, index) => {
 							const color = [...colors.entries()]
@@ -397,23 +404,32 @@ function App() {
 						infectionDeck.name = json.name;
 						setEditDeckFormVisible(false);
 					}}
+					style={{
+						flexDirection: 'column',
+					}}
 				>
 					<textarea
 						value={editDeckData}
-						style={{ width: '90vw', height: '80vh' }}
+						style={{
+							width: '90vw',
+							height: '80vh',
+							background: '#222',
+						}}
 						onChange={(e) => {
 							setEditDeckData(e.target.value);
 						}}
 					></textarea>
-					<button type="submit">Save</button>
-					<button
-						type="button"
-						onClick={() => {
-							setEditDeckFormVisible(false);
-						}}
-					>
-						Cancel
-					</button>
+					<div>
+						<Button type="submit">Save</Button>
+						<Button
+							type="button"
+							onClick={() => {
+								setEditDeckFormVisible(false);
+							}}
+						>
+							Cancel
+						</Button>
+					</div>
 				</form>
 			</Popup>
 			<Popup visible={topDrawFormVisible}>
@@ -497,7 +513,7 @@ function SelectCardForm({
 				onSelectCard(card);
 			}}
 		>
-			<select
+			<Select
 				value={cardName}
 				onChange={(e) => {
 					setCardName(e.target.value);
@@ -508,7 +524,7 @@ function SelectCardForm({
 						{card.name}
 					</option>
 				))}
-			</select>
+			</Select>
 			<Button type="submit">Draw</Button>
 			<Button type="button" onClick={onCancel}>
 				Done

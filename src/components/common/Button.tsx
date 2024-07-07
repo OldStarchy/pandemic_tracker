@@ -8,6 +8,7 @@ const StyledButton = styled.button`
 	align-items: center;
 	border: 1px solid currentColor;
 	line-height: 1;
+	background-color: black;
 
 	&:disabled {
 		color: gray;

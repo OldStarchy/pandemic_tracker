@@ -20,7 +20,16 @@ export function Popup({
 				alignItems: 'center',
 			}}
 		>
-			{children}
+			<div
+				style={{
+					background: 'black',
+					padding: '1rem',
+					borderRadius: '0.5rem',
+					boxShadow: '0 0 1rem black',
+				}}
+			>
+				{children}
+			</div>
 		</div>
 	);
 }

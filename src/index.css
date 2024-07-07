@@ -27,14 +27,14 @@ input,
 textarea,
 select,
 button {
-	background: black;
 	color: inherit;
+	background: black;
 }
 
-textarea,
-select {
+textarea {
 	min-width: 3rem;
 	min-height: 3rem;
+	line-height: 1.25;
 }
 
 input[type='checkbox'] {
@@ -44,6 +44,11 @@ input[type='checkbox'] {
 
 button:not(:disabled) {
 	cursor: pointer;
+}
+
+form {
+	display: flex;
+	gap: 0.25rem;
 }
 
 ul,

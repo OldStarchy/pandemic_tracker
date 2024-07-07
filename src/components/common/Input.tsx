@@ -14,9 +14,6 @@ const StyledInput = styled.input`
 	}
 `;
 
-export function Input({
-	children,
-	...props
-}: React.JSX.IntrinsicElements['input']) {
+export function Input(props: React.JSX.IntrinsicElements['input']) {
 	return <StyledInput {...props} />;
 }
