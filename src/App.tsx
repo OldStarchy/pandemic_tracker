@@ -11,7 +11,7 @@ import {
 	faStar,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import React, {
+import {
 	Dispatch,
 	SetStateAction,
 	useCallback,
@@ -21,13 +21,15 @@ import React, {
 } from 'react';
 import './App.css';
 import { CardBase } from './components/CardBase';
+import { DeckView } from './components/DeckView';
+import { Popup } from './components/Popup';
 import { Button } from './components/common/Button';
 import { Input } from './components/common/Input';
 import { H2 } from './components/common/Typography';
 import { cities } from './data/cities';
 import { Assortment, IAssortment } from './lib/Assortment';
 import { Card } from './lib/Card';
-import { Deck, IDeck, IPossibleCard, IReadonlyPossibleCard } from './lib/Deck';
+import { Deck, IPossibleCard, IReadonlyPossibleCard } from './lib/Deck';
 import { useMutable } from './lib/Mutable';
 
 const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
@@ -515,31 +517,7 @@ function SelectCardForm({
 	);
 }
 
-interface AssortedCardGroup {
-	card: IReadonlyPossibleCard;
-	count: number;
-}
-
-function groupByAssortment(
-	cards: readonly IReadonlyPossibleCard[]
-): AssortedCardGroup[] {
-	const result: AssortedCardGroup[] = [];
-
-	for (const card of cards) {
-		if (result.length === 0) {
-			result.push({ count: 1, card });
-			continue;
-		} else if (result[result.length - 1].card === card) {
-			result[result.length - 1].count++;
-		} else {
-			result.push({ count: 1, card });
-		}
-	}
-
-	return result;
-}
-
-function getAssortmentColors(
+export function getAssortmentColors(
 	deck: readonly IReadonlyPossibleCard[]
 ): Map<IAssortment, string> {
 	const assortments = new Map<IAssortment, string>();
@@ -555,7 +533,7 @@ function getAssortmentColors(
 	return assortments;
 }
 
-function getAssortmentLabels(
+export function getAssortmentLabels(
 	deck: readonly IReadonlyPossibleCard[]
 ): Map<IAssortment, string> {
 	const assortments = new Map<IAssortment, string>();
@@ -572,106 +550,6 @@ function getAssortmentLabels(
 	}
 
 	return assortments;
-}
-
-function DeckView({
-	deck,
-	cardPrefix,
-}: {
-	deck: IDeck;
-	cardPrefix?: (card: IPossibleCard, index: number) => React.ReactNode;
-}) {
-	const deckNonce = useMutable(deck);
-	const groupedCards = useMemo(
-		() => deck.cards, // groupByAssortment(deck.cards),
-		[deckNonce]
-	);
-
-	const colors = useMemo(() => getAssortmentColors(deck.cards), [deckNonce]);
-	const labels = useMemo(() => getAssortmentLabels(deck.cards), [deckNonce]);
-
-	return (
-		<div>
-			<ol>
-				{groupedCards.map((card, index) => (
-					<li
-						key={index}
-						style={{
-							display: 'flex',
-							alignItems: 'center',
-							gap: '0.25rem',
-							margin: '0.25rem 0',
-						}}
-					>
-						{cardPrefix?.(card, index)}
-						<CardBase
-							style={{
-								flexGrow: 1,
-								height:
-									// (1 + Math.min(count, 6) * 0.75).toFixed(1) +
-									'1.75rem',
-								backgroundColor:
-									card instanceof Assortment
-										? colors.get(card)
-										: undefined,
-							}}
-						>
-							{card instanceof Card
-								? card.name
-								: `1 of ${Assortment.getTotalCardCount(card)}`}
-							{card instanceof Assortment && (
-								<> Group {labels.get(card)}</>
-							)}
-							{/* x{count} */}
-							{card instanceof Assortment &&
-								card.cards.size < 5 && (
-									<>
-										{' '}
-										(
-										{[...card.cards.entries()]
-											.map(
-												([c, count]) =>
-													`${c.name}${
-														count > 1
-															? ` x${count}`
-															: ''
-													}`
-											)
-											.join(', ')}
-										)
-									</>
-								)}
-						</CardBase>
-					</li>
-				))}
-			</ol>
-		</div>
-	);
-}
-
-function Popup({
-	visible,
-	children,
-}: {
-	visible: boolean;
-	children: React.ReactNode;
-}) {
-	return (
-		<div
-			style={{
-				position: 'fixed',
-				inset: 0,
-				width: '100vw',
-				height: '100vh',
-				background: '#0008',
-				display: visible ? 'flex' : 'none',
-				justifyContent: 'center',
-				alignItems: 'center',
-			}}
-		>
-			{children}
-		</div>
-	);
 }
 
 export default App;
