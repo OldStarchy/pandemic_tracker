@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useMemo } from 'react';
 import { getAssortmentColors, getAssortmentLabels } from '../App';
 import { Assortment } from '../lib/Assortment';
