@@ -29,8 +29,6 @@ export function MainLayout({ children }: { children: ReactNode }) {
 				width: '100vw',
 				height: '100dvh',
 				isolation: 'isolate',
-				padding: '0.5rem',
-				gap: '0.5rem',
 			}}
 		>
 			<header
@@ -38,10 +36,11 @@ export function MainLayout({ children }: { children: ReactNode }) {
 					display: 'flex',
 					justifyContent: 'space-between',
 					fontSize: '1.5rem',
+					padding: '0.5rem',
 				}}
 			>
 				<h1>Pandemic Tracker</h1>
-				<div>
+				<div style={{ marginRight: '-0.5rem' }}>
 					<Link
 						href="https://github.com/OldStarchy/pandemic_tracker"
 						target="_BLANK"
@@ -52,13 +51,20 @@ export function MainLayout({ children }: { children: ReactNode }) {
 					</Link>
 				</div>
 			</header>
-			<main style={{ flexGrow: 1, overflow: 'auto' }}>{children}</main>
+			<main
+				style={{
+					flexGrow: 1,
+					overflow: 'auto',
+					padding: '0 0.5rem',
+				}}
+			>
+				{children}
+			</main>
 			<footer
 				style={{
 					display: 'flex',
 					justifyContent: 'space-between',
 					flexDirection: 'row-reverse',
-					margin: '-0.5rem',
 				}}
 			>
 				<Link href={newIssueLink.toString()} target="_BLANK">

@@ -130,6 +130,8 @@ export class Deck extends Mutable implements IDeck {
 
 		this.#trackAssortment(assort);
 
+		this.cleanup();
+
 		this.triggerChange();
 	}
 
