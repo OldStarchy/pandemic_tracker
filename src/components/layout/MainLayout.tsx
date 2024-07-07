@@ -1,7 +1,9 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ReactNode, useMemo } from 'react';
-import { Link } from '../common/Link';
+import { Link, Span } from '../common/Typography';
+
+const devMode = process.env.NODE_ENV === 'development';
 
 export function MainLayout({ children }: { children: ReactNode }) {
 	const newIssueLink = useMemo(() => {
@@ -49,10 +51,17 @@ export function MainLayout({ children }: { children: ReactNode }) {
 				</div>
 			</header>
 			<main style={{ flexGrow: 1, overflow: 'auto' }}>{children}</main>
-			<footer style={{ display: 'flex', justifyContent: 'flex-end' }}>
+			<footer
+				style={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					flexDirection: 'row-reverse',
+				}}
+			>
 				<Link href={newIssueLink.toString()} target="_BLANK">
 					Report an issue
 				</Link>
+				{devMode && <Span>Dev Mode</Span>}
 			</footer>
 		</div>
 	);
