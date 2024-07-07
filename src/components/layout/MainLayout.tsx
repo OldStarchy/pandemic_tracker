@@ -29,13 +29,15 @@ export function MainLayout({ children }: { children: ReactNode }) {
 				width: '100vw',
 				height: '100dvh',
 				isolation: 'isolate',
+				padding: '0.5rem',
+				gap: '0.5rem',
 			}}
 		>
 			<header
 				style={{
 					display: 'flex',
 					justifyContent: 'space-between',
-					fontSize: '2rem',
+					fontSize: '1.5rem',
 				}}
 			>
 				<h1>Pandemic Tracker</h1>
@@ -56,6 +58,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
 					display: 'flex',
 					justifyContent: 'space-between',
 					flexDirection: 'row-reverse',
+					margin: '-0.5rem',
 				}}
 			>
 				<Link href={newIssueLink.toString()} target="_BLANK">

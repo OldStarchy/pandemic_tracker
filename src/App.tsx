@@ -1,5 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import {
+	faArrowTurnUp,
+	faArrowUp,
+	faEdit,
+	faFileExport,
+	faFileImport,
+	faMinus,
+	faPlus,
+	faShuffle,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
 	Dispatch,
 	SetStateAction,
 	useCallback,
@@ -9,6 +20,8 @@ import {
 } from 'react';
 import './App.css';
 import { CardBase } from './components/CardBase';
+import { Button } from './components/common/Button';
+import { Input } from './components/common/Input';
 import { cities } from './data/cities';
 import { Assortment, IAssortment } from './lib/Assortment';
 import { Card } from './lib/Card';
@@ -125,7 +138,7 @@ function App() {
 			<div>
 				<label>
 					Draw Count
-					<input
+					<Input
 						type="number"
 						min="1"
 						value={drawCount}
@@ -134,22 +147,24 @@ function App() {
 						}}
 					/>
 				</label>
-				<button
+				<Button
+					style={{ aspectRatio: '1' }}
 					onClick={() => {
 						setDrawCount((d) => d - 1);
 					}}
 				>
-					-
-				</button>
-				<button
+					<FontAwesomeIcon icon={faMinus} />
+				</Button>
+				<Button
+					style={{ aspectRatio: '1' }}
 					onClick={() => {
 						setDrawCount((d) => d + 1);
 					}}
 				>
-					+
-				</button>
+					<FontAwesomeIcon icon={faPlus} />
+				</Button>
 			</div>
-			<button
+			<Button
 				onClick={() => {
 					if (infectionDeck.cards.length === 0) return;
 
@@ -162,10 +177,11 @@ function App() {
 						discardDeck.insert(stack, 0);
 					}
 				}}
+				title="Draw Cards from the top of the deck"
 			>
-				Draw Top
-			</button>
-			<button
+				Draw Top <FontAwesomeIcon icon={faArrowUp} />
+			</Button>
+			<Button
 				onClick={() => {
 					if (infectionDeck.cards.length === 0) return;
 
@@ -179,10 +195,11 @@ function App() {
 						discardDeck.insert(stack, 0);
 					}
 				}}
+				title="Draw a card from the bottom of the deck"
 			>
-				Draw Bottom
-			</button>
-			<button
+				Draw Bottom <FontAwesomeIcon icon={faArrowTurnUp} />
+			</Button>
+			<Button
 				onClick={() => {
 					discardDeck.shuffle();
 
@@ -194,9 +211,9 @@ function App() {
 					infectionDeck.insert(cards, 0);
 				}}
 			>
-				Shuffle and Restack
-			</button>
-			<button
+				Shuffle and Restack <FontAwesomeIcon icon={faShuffle} />
+			</Button>
+			<Button
 				onClick={() => {
 					const data = JSON.stringify(
 						{
@@ -217,9 +234,9 @@ function App() {
 					a.remove();
 				}}
 			>
-				Export
-			</button>
-			<button
+				Export <FontAwesomeIcon icon={faFileExport} />
+			</Button>
+			<Button
 				onClick={async () => {
 					const input = document.createElement('input');
 					input.type = 'file';
@@ -254,9 +271,9 @@ function App() {
 					input.click();
 				}}
 			>
-				Import
-			</button>
-			<button
+				Import <FontAwesomeIcon icon={faFileImport} />
+			</Button>
+			<Button
 				onClick={() => {
 					const data = JSON.stringify(
 						infectionDeck.toJson(),
@@ -268,8 +285,8 @@ function App() {
 					setEditDeckFormVisible(true);
 				}}
 			>
-				Edit Infction Deck
-			</button>
+				Edit Infction Deck <FontAwesomeIcon icon={faEdit} />
+			</Button>
 			<ol>
 				{cardDrawProbabilities.map(({ card, probability }, index) => {
 					const color = [...colors.entries()]
@@ -452,10 +469,10 @@ function SelectCardForm({
 					</option>
 				))}
 			</select>
-			<button type="submit">Draw</button>
-			<button type="button" onClick={onCancel}>
+			<Button type="submit">Draw</Button>
+			<Button type="button" onClick={onCancel}>
 				Done
-			</button>
+			</Button>
 		</form>
 	);
 }

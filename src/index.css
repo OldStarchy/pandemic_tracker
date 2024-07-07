@@ -13,7 +13,7 @@ code {
 }
 
 :root {
-	color: white;
+	color: #cccccc;
 	background: black;
 }
 
@@ -28,13 +28,10 @@ select,
 button {
 	background: black;
 	color: inherit;
-	padding: 0.25rem;
 }
 
-input:not([type='checkbox']),
 textarea,
-select,
-button {
+select {
 	min-width: 3rem;
 	min-height: 3rem;
 }
@@ -42,14 +39,6 @@ button {
 input[type='checkbox'] {
 	min-width: 1rem;
 	min-height: 1rem;
-}
-
-button {
-	border: 1px solid currentColor;
-}
-
-button:disabled {
-	color: gray;
 }
 
 button:not(:disabled) {
