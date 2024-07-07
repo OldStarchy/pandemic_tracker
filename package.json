@@ -4,9 +4,9 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/OldStarchy/pandemic_tracker.git"
+    "url": "https://github.com/oldstarchy/pandemic_tracker.git"
   },
-  "homepage": "https://OldStarchy.github.io/pandemic_tracker",
+  "homepage": "https://oldstarchy.github.io/pandemic_tracker/",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@fortawesome/free-brands-svg-icons": "^6.5.2",
