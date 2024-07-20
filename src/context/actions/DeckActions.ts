@@ -1,4 +1,5 @@
 import { Card } from '../Card';
+import CardUtil from '../CardUtil';
 import { Deck, DeckItem } from '../Deck';
 import { Group } from '../Group';
 import { Universe } from '../Universe';
@@ -140,6 +141,22 @@ export function shuffleDeckReducer(
 	if (!deckToShuffle) {
 		return state;
 	}
+
+	const uniqueCardNames = new Set(
+		deckToShuffle.items.flatMap((item) => {
+			if (item.type === 'card')
+				return CardUtil.getCardName(state, item.cardId);
+
+			const group = state.groups.find(
+				(group) => group.id === item.groupId,
+			)!;
+			return Array.from(group.cardIds).map((cardId) =>
+				CardUtil.getCardName(state, cardId),
+			);
+		}),
+	);
+
+	if (uniqueCardNames.size <= 1) return state;
 
 	const numberOfItemsFromEachGroup: Record<string, number> = {};
 	for (const item of deckToShuffle.items) {
