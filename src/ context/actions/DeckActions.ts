@@ -1,4 +1,5 @@
 import { Card } from '../Card';
+import CardUtil from '../CardUtil';
 import { Deck, DeckItem } from '../Deck';
 import { Group } from '../Group';
 import { Universe } from '../Universe';
@@ -72,15 +73,17 @@ export function moveCardReducer(
 		return state;
 	}
 
-	const count =
-		action.count === -1
-			? fromDeck.items.length - action.fromIndex
-			: action.count;
+	let fromIndex = action.fromIndex;
+	if (fromIndex < 0) fromIndex += fromDeck.items.length;
 
-	const items = fromDeck.items.slice(
-		action.fromIndex,
-		action.fromIndex + count,
-	);
+	let toIndex = action.toIndex;
+	// +1 to allow inserting at -1 => last position ie. (length - 1 + 1)
+	if (toIndex < 0) toIndex += toDeck.items.length + 1;
+
+	const count =
+		action.count === -1 ? fromDeck.items.length - fromIndex : action.count;
+
+	const items = fromDeck.items.slice(fromIndex, fromIndex + count);
 
 	if (items.length !== count) {
 		return state;
@@ -89,15 +92,15 @@ export function moveCardReducer(
 	const newFromDeck = {
 		...fromDeck,
 		items: fromDeck.items
-			.slice(0, action.fromIndex)
-			.concat(fromDeck.items.slice(action.fromIndex + count)),
+			.slice(0, fromIndex)
+			.concat(fromDeck.items.slice(fromIndex + count)),
 	};
 
 	const newToDeck = {
 		...toDeck,
 		items: toDeck.items
-			.slice(0, action.toIndex)
-			.concat(items, toDeck.items.slice(action.toIndex)),
+			.slice(0, toIndex)
+			.concat(items, toDeck.items.slice(toIndex)),
 	};
 
 	const decks = state.decks.map((deck) => {
@@ -214,13 +217,13 @@ interface RevealCardAction {
 	type: typeof ACTION_REVEAL_CARD;
 	deckId: Deck['id'];
 	index: number;
-	as?: Card['id'];
+	as: Card['id'];
 }
 
 export function revealCard(
 	deckId: Deck['id'],
 	index: number,
-	as?: Card['id'],
+	as: Card['id'],
 ): RevealCardAction {
 	return { type: ACTION_REVEAL_CARD, deckId, index, as };
 }
@@ -252,12 +255,19 @@ export function revealCardReducer(
 		asCard = group.cardIds.values().next().value;
 	}
 
-	const newGroupCardIds = new Set(group.cardIds);
-	newGroupCardIds.delete(asCard);
+	const newGroupCardIds = Array.from(group.cardIds);
+
+	const asCardIndex = newGroupCardIds.findIndex(
+		(cid) => CardUtil.getCardName(state, cid) === asCard,
+	);
+
+	if (asCardIndex === -1) return state;
+
+	const [revealedCardId] = newGroupCardIds.splice(asCardIndex, 1);
 
 	const newGroup: Group = {
 		...group,
-		cardIds: newGroupCardIds,
+		cardIds: new Set(newGroupCardIds),
 	};
 
 	const newDeck: Deck = {
@@ -266,7 +276,7 @@ export function revealCardReducer(
 			if (index === action.index) {
 				return {
 					type: 'card',
-					cardId: asCard,
+					cardId: revealedCardId,
 				};
 			}
 

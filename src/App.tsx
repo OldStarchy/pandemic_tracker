@@ -363,14 +363,7 @@ function App() {
 						if (!infectionDeck || !nextDrawOptions) return;
 						if (infectionDeck.items.length === 0) return;
 
-						if (nextDrawOptions.length > 0)
-							setTopDrawFormVisible(true);
-						else {
-							dispatch(
-								moveCard(INFECTION_DECK, 0, DISCARD_DECK, 0, 1),
-							);
-							dispatch(revealCard(DISCARD_DECK, 0));
-						}
+						setTopDrawFormVisible(true);
 					}}
 					title="Draw Cards from the top of the deck"
 				>
@@ -381,20 +374,7 @@ function App() {
 						if (!infectionDeck || !nextBottomDrawOptions) return;
 						if (infectionDeck.items.length === 0) return;
 
-						if (nextBottomDrawOptions.length > 0)
-							setBottomDrawFormVisible(true);
-						else {
-							dispatch(
-								moveCard(
-									INFECTION_DECK,
-									-1,
-									DISCARD_DECK,
-									0,
-									1,
-								),
-							);
-							dispatch(revealCard(DISCARD_DECK, 0));
-						}
+						setBottomDrawFormVisible(true);
 					}}
 					title="Draw a card from the bottom of the deck"
 				>
@@ -496,7 +476,7 @@ function App() {
 			</Popup>
 			<Popup visible={topDrawFormVisible}>
 				<SelectCardForm
-					options={nextDrawOptions ?? []}
+					options={Array.from(new Set(nextDrawOptions ?? []))}
 					onCancel={() => {
 						setTopDrawFormVisible(false);
 					}}
@@ -512,7 +492,7 @@ function App() {
 			</Popup>
 			<Popup visible={bottomDrawFormVisible}>
 				<SelectCardForm
-					options={nextBottomDrawOptions ?? []}
+					options={Array.from(new Set(nextBottomDrawOptions ?? []))}
 					onCancel={() => {
 						setBottomDrawFormVisible(false);
 					}}
@@ -520,7 +500,7 @@ function App() {
 						dispatch(
 							moveCard(INFECTION_DECK, -1, DISCARD_DECK, 0, 1),
 						);
-						dispatch(revealCard(DISCARD_DECK, 0));
+						dispatch(revealCard(DISCARD_DECK, 0, card));
 
 						setBottomDrawFormVisible(false);
 					}}
@@ -546,7 +526,7 @@ function SelectCardForm({
 			onCancel();
 			return;
 		}
-		if (!options.some((cardName) => cardName === cardName)) {
+		if (!options.some((c) => c === cardName)) {
 			setCardName(options[0]);
 		}
 	}, [options]);
@@ -556,8 +536,7 @@ function SelectCardForm({
 			onSubmit={(e) => {
 				e.preventDefault();
 
-				const card = options.find((cardName) => cardName === cardName)!;
-				onSelectCard(card);
+				onSelectCard(cardName);
 			}}
 		>
 			<Select
