@@ -30,6 +30,11 @@ import UniverseActions, {
 	loadReducer,
 	resetReducer,
 } from './actions/UniverseActions';
+import {
+	createUseCanUndo,
+	emptyUndoState,
+	withUndoReducer,
+} from './withUndoReducer';
 
 const universeReducer: Reducer<
 	Universe,
@@ -62,11 +67,11 @@ const universeReducer: Reducer<
 	}
 };
 
+const appReducer = withUndoReducer(universeReducer);
+
 export function UniverseProvider({ children }: { children: React.ReactNode }) {
-	const [universe, dispatch] = useReducer(
-		universeReducer,
-		undefined,
-		Universe.empty,
+	const [universe, dispatch] = useReducer(appReducer, undefined, () =>
+		emptyUndoState<Universe, UniverseActions>(Universe.empty()),
 	);
 
 	return (
@@ -78,16 +83,20 @@ export function UniverseProvider({ children }: { children: React.ReactNode }) {
 
 const UniverseContext = createContext<
 	[
-		ReducerState<typeof universeReducer>,
-		Dispatch<ReducerAction<typeof universeReducer>>,
+		ReducerState<typeof appReducer>,
+		Dispatch<ReducerAction<typeof appReducer>>,
 	]
 >([
-	Universe.empty(),
+	emptyUndoState(Universe.empty()),
 	() => {
 		throw new Error('UniverseContext not initialized');
 	},
 ]);
 
 export function useUniverse() {
-	return useContext(UniverseContext);
+	const [stateWithUndo, dispatch] = useContext(UniverseContext);
+
+	return [stateWithUndo.current, dispatch] as const;
 }
+
+export const useCanUndo = createUseCanUndo(UniverseContext);

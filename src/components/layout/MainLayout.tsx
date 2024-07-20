@@ -8,14 +8,14 @@ const devMode = process.env.NODE_ENV === 'development';
 export function MainLayout({ children }: { children: ReactNode }) {
 	const newIssueLink = useMemo(() => {
 		const newIssueLink = new URL(
-			`https://github.com/OldStarchy/pandemic_tracker/issues/new`
+			`https://github.com/OldStarchy/pandemic_tracker/issues/new`,
 		);
 
 		newIssueLink.searchParams.append(
 			'body',
 			(process.env.REACT_APP_GIT_SHA
 				? `Version: ${process.env.REACT_APP_GIT_SHA}\n\n`
-				: '') + '<!-- Write your issue here -->'
+				: '') + '<!-- Write your issue here -->',
 		);
 
 		return newIssueLink;
@@ -68,7 +68,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
 				}}
 			>
 				<Link href={newIssueLink.toString()} target="_BLANK">
-					Report an issue
+					Report an issue or suggest a feature
 				</Link>
 				{devMode && <Span>Dev Mode</Span>}
 			</footer>

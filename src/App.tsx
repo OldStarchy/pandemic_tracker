@@ -7,8 +7,10 @@ import {
 	faFileImport,
 	faMinus,
 	faPlus,
+	faRedo,
 	faShuffle,
 	faStar,
+	faUndo,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -32,7 +34,7 @@ import CardUtil from './context/CardUtil';
 import { DeckItem } from './context/Deck';
 import DeckUtil from './context/DeckUtil';
 import { Group } from './context/Group';
-import { useUniverse } from './context/UniverseContext';
+import { useCanUndo, useUniverse } from './context/UniverseContext';
 import { createCards } from './context/actions/CardActions';
 import {
 	createDeck,
@@ -41,7 +43,9 @@ import {
 	shuffleDeck,
 } from './context/actions/DeckActions';
 import { load, reset } from './context/actions/UniverseActions';
+import { redoAction, undoAction } from './context/withUndoReducer';
 import { cities } from './data/cities';
+import { createSave, loadSave } from './lib/SaveFormat';
 
 // const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
 // const shuffledCityCards = new Assortment(
@@ -99,6 +103,7 @@ function App() {
 	);
 
 	const [universe, dispatch] = useUniverse();
+	const { canUndo, canRedo } = useCanUndo();
 
 	useEffect(() => {
 		dispatch(reset());
@@ -239,6 +244,20 @@ function App() {
 				</div>
 			</section>
 			<section>
+				<Button
+					onClick={() => dispatch(undoAction())}
+					disabled={!canUndo}
+				>
+					Undo <FontAwesomeIcon icon={faUndo} />
+				</Button>
+				<Button
+					onClick={() => dispatch(redoAction())}
+					disabled={!canRedo}
+				>
+					Redo <FontAwesomeIcon icon={faRedo} />
+				</Button>
+			</section>
+			<section>
 				<H2>Draw Chance</H2>
 				<ol
 					style={{
@@ -285,17 +304,16 @@ function App() {
 			<section>
 				<Button
 					onClick={() => {
-						const data = JSON.stringify(
-							{
-								universe,
-								drawCount,
-							},
-							null,
-							2,
-						);
-						const blob = new Blob([data], {
-							type: 'application/json',
+						const data = createSave({
+							universe,
+							drawCount,
 						});
+						const blob = new Blob(
+							[JSON.stringify(data, undefined, 4)],
+							{
+								type: 'application/json',
+							},
+						);
 						const url = URL.createObjectURL(blob);
 						const a = document.createElement('a');
 						a.href = url;
@@ -318,28 +336,11 @@ function App() {
 
 							const data = await file.text();
 							const json = JSON.parse(data);
-							//TODO: Validate structure
 
-							dispatch(load(json.universe));
-							// const infecDec = Deck.fromJson(json.infectionDeck);
-							// infectionDeck.remove(0, infectionDeck.cards.length);
-							// infectionDeck.insert(
-							// 	infecDec.cards as unknown as IPossibleCard[],
-							// 	0,
-							// );
-							// infecDec.remove(0, infecDec.cards.length);
-							// infectionDeck.name = infecDec.name;
+							const { universe, drawCount } = loadSave(json);
 
-							// const discDec = Deck.fromJson(json.discardDeck);
-							// discardDeck.remove(0, discardDeck.cards.length);
-							// discardDeck.insert(
-							// 	discDec.cards as unknown as IPossibleCard[],
-							// 	0,
-							// );
-							// discDec.remove(0, discDec.cards.length);
-							// discardDeck.name = discDec.name;
-
-							setDrawCount(json.drawCount);
+							dispatch(load(universe));
+							setDrawCount(drawCount);
 						};
 						input.click();
 					}}
@@ -348,7 +349,11 @@ function App() {
 				</Button>
 				<Button
 					onClick={() => {
-						const data = JSON.stringify(universe, null, 2);
+						const data = JSON.stringify(
+							createSave({ universe, drawCount: 0 }).universe,
+							null,
+							2,
+						);
 
 						setEditDeckData(data);
 						setEditDeckFormVisible(true);
@@ -441,7 +446,9 @@ function App() {
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
-						const json = JSON.parse(editDeckData);
+						const json = loadSave(
+							JSON.parse(editDeckData),
+						).universe;
 						//TODO: Validate structure
 						dispatch(load(json));
 						setEditDeckFormVisible(false);

@@ -286,13 +286,15 @@ export function revealCardReducer(
 
 	return {
 		...state,
-		groups: state.groups.map((group) => {
-			if (group.id === newGroup.id) {
-				return newGroup;
-			}
+		groups: state.groups
+			.map((group) => {
+				if (group.id === newGroup.id) {
+					return newGroup;
+				}
 
-			return group;
-		}),
+				return group;
+			})
+			.filter((g) => g.cardIds.size > 0),
 		decks: state.decks.map((deck) => {
 			if (deck.id === newDeck.id) {
 				return newDeck;
