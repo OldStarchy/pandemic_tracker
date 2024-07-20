@@ -111,12 +111,14 @@ function revealSingletonGroups(state: Universe) {
 				CardUtil.getCardName(state, cid),
 			),
 		);
-		const reducable = cardNames.size === 1;
+		const reducable = cardNames.size <= 1;
 
 		if (reducable) {
 			reducableGroupIdCardIdsMap[group.id] = Array.from(group.cardIds);
 		}
 	}
+
+	if (Object.keys(reducableGroupIdCardIdsMap).length === 0) return state;
 
 	const newDecks = state.decks.map((deck): Deck => {
 		const irreducible = deck.items.every((item) => {
