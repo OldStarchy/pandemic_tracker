@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useMemo } from 'react';
-import CardUtil from '../ context/CardUtil';
-import { Deck, DeckItem } from '../ context/Deck';
-import { useUniverse } from '../ context/UniverseContext';
 import { getAssortmentColors, getAssortmentLabels } from '../App';
+import CardUtil from '../context/CardUtil';
+import { Deck, DeckItem } from '../context/Deck';
+import { useUniverse } from '../context/UniverseContext';
 import { CardBase } from './CardBase';
 
 export function DeckView({

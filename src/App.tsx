@@ -19,20 +19,6 @@ import {
 	useMemo,
 	useState,
 } from 'react';
-import { Card } from './ context/Card';
-import CardUtil from './ context/CardUtil';
-import { DeckItem } from './ context/Deck';
-import DeckUtil from './ context/DeckUtil';
-import { Group } from './ context/Group';
-import { useUniverse } from './ context/UniverseContext';
-import { createCards } from './ context/actions/CardActions';
-import {
-	createDeck,
-	moveCard,
-	revealCard,
-	shuffleDeck,
-} from './ context/actions/DeckActions';
-import { load, reset } from './ context/actions/UniverseActions';
 import './App.css';
 import { CardBase } from './components/CardBase';
 import { DeckView } from './components/DeckView';
@@ -41,6 +27,20 @@ import { Button } from './components/common/Button';
 import { Input } from './components/common/Input';
 import { Select } from './components/common/Select';
 import { H2 } from './components/common/Typography';
+import { Card } from './context/Card';
+import CardUtil from './context/CardUtil';
+import { DeckItem } from './context/Deck';
+import DeckUtil from './context/DeckUtil';
+import { Group } from './context/Group';
+import { useUniverse } from './context/UniverseContext';
+import { createCards } from './context/actions/CardActions';
+import {
+	createDeck,
+	moveCard,
+	revealCard,
+	shuffleDeck,
+} from './context/actions/DeckActions';
+import { load, reset } from './context/actions/UniverseActions';
 import { cities } from './data/cities';
 
 // const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
