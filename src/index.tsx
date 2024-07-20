@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { UniverseProvider } from './ context/UniverseContext';
 import App from './App';
 import { MainLayout } from './components/layout/MainLayout';
 import './index.css';
@@ -23,18 +24,20 @@ Sentry.init({
 });
 
 const root = ReactDOM.createRoot(
-	document.getElementById('root') as HTMLElement
+	document.getElementById('root') as HTMLElement,
 );
 
 //TODO: set baseurl for deployment
-console.log(process.env.FOOBAR);
+// console.log(process.env.FOOBAR);
 
 root.render(
 	<React.StrictMode>
 		<MainLayout>
-			<App />
+			<UniverseProvider>
+				<App />
+			</UniverseProvider>
 		</MainLayout>
-	</React.StrictMode>
+	</React.StrictMode>,
 );
 
 // If you want to start measuring performance in your app, pass a function

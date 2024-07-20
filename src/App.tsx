@@ -10,7 +10,7 @@ import {
 	faShuffle,
 	faStar,
 } from '@fortawesome/free-solid-svg-icons';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
 	Dispatch,
 	SetStateAction,
@@ -19,38 +19,41 @@ import {
 	useMemo,
 	useState,
 } from 'react';
+import { useUniverse } from './ context/UniverseContext';
+import { createCards } from './ context/actions/CardActions';
+import { createDeck, shuffleDeck } from './ context/actions/DeckActions';
+import { reset } from './ context/actions/UniverseActions';
 import './App.css';
-import {CardBase} from './components/CardBase';
-import {DeckView} from './components/DeckView';
-import {Popup} from './components/Popup';
-import {Button} from './components/common/Button';
-import {Input} from './components/common/Input';
-import {Select} from './components/common/Select';
-import {H2} from './components/common/Typography';
-import {cities} from './data/cities';
-import {Assortment, IAssortment} from './lib/Assortment';
-import {Card} from './lib/Card';
-import {Deck, IPossibleCard, IReadonlyPossibleCard} from './lib/Deck';
-import {useMutable} from './lib/Mutable';
+import { CardBase } from './components/CardBase';
+import { DeckView } from './components/DeckView';
+import { Popup } from './components/Popup';
+import { Button } from './components/common/Button';
+import { Input } from './components/common/Input';
+import { Select } from './components/common/Select';
+import { H2 } from './components/common/Typography';
+import { cities } from './data/cities';
+import { Assortment, IAssortment } from './lib/Assortment';
+import { Card } from './lib/Card';
+import { Deck, IPossibleCard, IReadonlyPossibleCard } from './lib/Deck';
 
 const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
-const shuffledCityCards = new Assortment(
-	new Map(
-		cityCards.map((card) => [
-			card,
-			cities[card.name as keyof typeof cities],
-		])
-	)
-);
-const infectionDeck = new Deck('Infection Deck');
-infectionDeck.insert(
-	new Array(Assortment.getTotalCardCount(shuffledCityCards)).fill(
-		shuffledCityCards
-	),
-	0
-);
+// const shuffledCityCards = new Assortment(
+// 	new Map(
+// 		cityCards.map((card) => [
+// 			card,
+// 			cities[card.name as keyof typeof cities],
+// 		])
+// 	)
+// );
+// const infectionDeck = new Deck('Infection Deck');
+// infectionDeck.insert(
+// 	new Array(Assortment.getTotalCardCount(shuffledCityCards)).fill(
+// 		shuffledCityCards
+// 	),
+// 	0
+// );
 
-const discardDeck = new Deck('Discard Deck');
+// const discardDeck = new Deck('Discard Deck');
 
 function getNthNiceColor(n: number): string {
 	const goldenRatioConjugate = 0.618033988749895;
@@ -63,7 +66,7 @@ function createStripeyBackground(colors: string[]): string {
 	return `repeating-linear-gradient(45deg, ${colors
 		.map(
 			(color, index) =>
-				`${color} ${index * 1.5}rem, ${color} ${(index + 1) * 1.5}rem`
+				`${color} ${index * 1.5}rem, ${color} ${(index + 1) * 1.5}rem`,
 		)
 		.join(', ')})`;
 }
@@ -79,14 +82,28 @@ function App() {
 	const setDrawCount = useCallback<Dispatch<SetStateAction<number>>>(
 		(count) => {
 			setDrawCountRaw((c) =>
-				Math.max(1, typeof count === 'number' ? count : count(c))
+				Math.max(1, typeof count === 'number' ? count : count(c)),
 			);
 		},
-		[setDrawCountRaw]
+		[setDrawCountRaw],
 	);
 
-	const infectionNonce = useMutable(infectionDeck);
-	useMutable(discardDeck);
+	const [universe, dispatch] = useUniverse();
+
+	useEffect(() => {
+		dispatch(reset());
+		dispatch(createDeck('Infection Deck'));
+		dispatch(
+			createCards(
+				'Infection Deck',
+				...Object.entries(cities).flatMap(([city, count]) =>
+					new Array(count).fill(city),
+				),
+			),
+		);
+		dispatch(shuffleDeck('Infection Deck'));
+		dispatch(createDeck('Discard Deck'));
+	}, []);
 
 	const cardDrawProbabilities = useMemo(() => {
 		const allTheCards = infectionDeck.cards
@@ -108,7 +125,7 @@ function App() {
 				const probability = Deck.calculateDrawChance(
 					infectionDeck,
 					card,
-					drawCount
+					drawCount,
 				);
 
 				return { card, probability };
@@ -118,7 +135,7 @@ function App() {
 
 	const colors = useMemo(
 		() => getAssortmentColors(infectionDeck.cards.slice(0, drawCount)),
-		[infectionNonce, drawCount]
+		[infectionNonce, drawCount],
 	);
 
 	const nextDrawOptions = useMemo(() => {
@@ -197,7 +214,7 @@ function App() {
 						({ card, probability }, index) => {
 							const color = [...colors.entries()]
 								.filter(([assortment]) =>
-									assortment.cards.has(card)
+									assortment.cards.has(card),
 								)
 								.map(([, color]) => color);
 							return (
@@ -216,7 +233,7 @@ function App() {
 									</CardBase>
 								</li>
 							);
-						}
+						},
 					)}
 				</ol>
 			</section>
@@ -230,7 +247,7 @@ function App() {
 								drawCount,
 							},
 							null,
-							2
+							2,
 						);
 						const blob = new Blob([data], {
 							type: 'application/json',
@@ -262,7 +279,7 @@ function App() {
 							infectionDeck.remove(0, infectionDeck.cards.length);
 							infectionDeck.insert(
 								infecDec.cards as unknown as IPossibleCard[],
-								0
+								0,
 							);
 							infecDec.remove(0, infecDec.cards.length);
 							infectionDeck.name = infecDec.name;
@@ -271,7 +288,7 @@ function App() {
 							discardDeck.remove(0, discardDeck.cards.length);
 							discardDeck.insert(
 								discDec.cards as unknown as IPossibleCard[],
-								0
+								0,
 							);
 							discDec.remove(0, discDec.cards.length);
 							discardDeck.name = discDec.name;
@@ -288,7 +305,7 @@ function App() {
 						const data = JSON.stringify(
 							infectionDeck.toJson(),
 							null,
-							2
+							2,
 						);
 
 						setEditDeckData(data);
@@ -341,7 +358,7 @@ function App() {
 
 						const cards = discardDeck.remove(
 							0,
-							discardDeck.cards.length
+							discardDeck.cards.length,
 						);
 
 						infectionDeck.insert(cards, 0);
@@ -399,7 +416,7 @@ function App() {
 						infectionDeck.remove(0, infectionDeck.cards.length);
 						infectionDeck.insert(
 							json.cards as unknown as IPossibleCard[],
-							0
+							0,
 						);
 						infectionDeck.name = json.name;
 						setEditDeckFormVisible(false);
@@ -447,7 +464,7 @@ function App() {
 						if (top instanceof Assortment) {
 							Assortment.subtract(
 								top,
-								new Assortment(new Map([[card, 1]]))
+								new Assortment(new Map([[card, 1]])),
 							);
 						}
 
@@ -470,7 +487,7 @@ function App() {
 						if (top instanceof Assortment) {
 							Assortment.subtract(
 								top,
-								new Assortment(new Map([[card, 1]]))
+								new Assortment(new Map([[card, 1]])),
 							);
 						}
 
@@ -534,7 +551,7 @@ function SelectCardForm({
 }
 
 export function getAssortmentColors(
-	deck: readonly IReadonlyPossibleCard[]
+	deck: readonly IReadonlyPossibleCard[],
 ): Map<IAssortment, string> {
 	const assortments = new Map<IAssortment, string>();
 
@@ -550,7 +567,7 @@ export function getAssortmentColors(
 }
 
 export function getAssortmentLabels(
-	deck: readonly IReadonlyPossibleCard[]
+	deck: readonly IReadonlyPossibleCard[],
 ): Map<IAssortment, string> {
 	const assortments = new Map<IAssortment, string>();
 
@@ -559,7 +576,7 @@ export function getAssortmentLabels(
 			if (!assortments.has(card)) {
 				assortments.set(
 					card,
-					String.fromCharCode(65 + assortments.size)
+					String.fromCharCode(65 + assortments.size),
 				);
 			}
 		}
