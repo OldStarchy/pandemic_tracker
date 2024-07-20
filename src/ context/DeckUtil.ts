@@ -1,11 +1,11 @@
-import {Card} from './Card';
+import { Card } from './Card';
 import CardUtil from './CardUtil';
-import {Deck} from './Deck';
-import {Group} from './Group';
-import {Universe} from './Universe';
+import { Deck, DeckItem } from './Deck';
+import { Group } from './Group';
+import { Universe } from './Universe';
 
 export default class DeckUtil {
-	private constructor() { }
+	private constructor() {}
 
 	// export function clone(deck: IReadonlyDeck): IDeck {
 	// 	const result = new Deck(deck.name);
@@ -16,11 +16,11 @@ export default class DeckUtil {
 	// 	return result;
 	// }
 
-	  static calculateDrawChance(
+	static calculateDrawChance(
 		universe: Universe,
 		deck: Deck,
 		card: Card['name'],
-		drawCount: number
+		drawCount: number,
 	): number {
 		if (drawCount < 0) {
 			throw new Error('drawCount must be non-negative');
@@ -31,7 +31,7 @@ export default class DeckUtil {
 		}
 
 		const imaginedAssortments = new Map<
-			Group,
+			Group['id'],
 			{ totalCount: number; cardCount: number }
 		>();
 
@@ -44,21 +44,29 @@ export default class DeckUtil {
 			let cardCount: number;
 
 			if (possibleCard.type === 'card') {
-				if (CardUtil.getCardName(universe, possibleCard.cardId) === card) {
+				if (
+					CardUtil.getCardName(universe, possibleCard.cardId) === card
+				) {
 					return 1;
 				} else continue;
 			}
 
-			if (!imaginedAssortments.has(possibleCard)) {
-				totalCount = Assortment.getTotalCardCount(possibleCard);
-				cardCount = Assortment.getCardCount(possibleCard, card);
+			const group = universe.groups.find(
+				(g) => g.id === possibleCard.groupId,
+			)!;
 
-				imaginedAssortments.set(possibleCard, {
+			if (!imaginedAssortments.has(possibleCard.groupId)) {
+				totalCount = group.cardIds.size;
+				cardCount = Array.from(group.cardIds).filter(
+					(c) => CardUtil.getCardName(universe, c) === card,
+				).length;
+
+				imaginedAssortments.set(possibleCard.groupId, {
 					totalCount,
 					cardCount,
 				});
 			} else {
-				const img = imaginedAssortments.get(possibleCard)!;
+				const img = imaginedAssortments.get(possibleCard.groupId)!;
 				totalCount = img.totalCount;
 				cardCount = img.cardCount;
 			}
@@ -67,12 +75,27 @@ export default class DeckUtil {
 
 			totalChance += (1 - totalChance) * chance;
 
-			imaginedAssortments.set(possibleCard, {
+			imaginedAssortments.set(possibleCard.groupId, {
 				totalCount: totalCount - 1,
 				cardCount,
 			});
 		}
 
 		return totalChance;
+	}
+
+	static getCardOptions(universe: Universe, item: DeckItem) {
+		switch (item.type) {
+			case 'card':
+				return [CardUtil.getCardName(universe, item.cardId)!];
+
+			case 'group':
+				return Array.from(
+					universe.groups.find((g) => g.id === item.groupId)!.cardIds,
+				).map((id) => CardUtil.getCardName(universe, id)!);
+
+			default:
+				const _exhaustiveCheck: never = item;
+		}
 	}
 }

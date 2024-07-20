@@ -100,7 +100,7 @@ export namespace Assortment {
 	 */
 	export function intersect(
 		a: IReadonlyAssortment,
-		b: IReadonlyAssortment
+		b: IReadonlyAssortment,
 	): IAssortment {
 		const result: IAssortment = new Assortment(new Map());
 		for (const [card, count] of a.cards) {
@@ -119,7 +119,7 @@ export namespace Assortment {
 	export function moveCards(
 		from: IAssortment,
 		to: IAssortment,
-		selection: IReadonlyAssortment
+		selection: IReadonlyAssortment,
 	): void {
 		subtract(from, selection);
 		merge(to, selection);
@@ -132,7 +132,7 @@ export namespace Assortment {
 	export function tryMoveCards(
 		from: IAssortment,
 		to: IAssortment,
-		selection: IReadonlyAssortment
+		selection: IReadonlyAssortment,
 	): IAssortment {
 		const common = intersect(from, selection);
 		subtract(from, common);
@@ -154,7 +154,7 @@ export namespace Assortment {
 	export function calculateDrawChance(
 		totalCount: number,
 		cardCount: number,
-		drawCount: number
+		drawCount: number,
 	): number {
 		if (cardCount === 0) {
 			return 0;
@@ -175,7 +175,7 @@ export namespace Assortment {
 					calculateDrawChance(
 						totalCount - 1,
 						cardCount,
-						drawCount - 1
+						drawCount - 1,
 					)
 			);
 		}
@@ -197,7 +197,7 @@ export namespace Assortment {
 	 */
 	export function getCardCount(
 		assortment: IReadonlyAssortment,
-		card: Card
+		card: Card,
 	): number {
 		return assortment.cards.get(card) ?? 0;
 	}

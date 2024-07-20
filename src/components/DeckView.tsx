@@ -1,27 +1,23 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useMemo } from 'react';
+import CardUtil from '../ context/CardUtil';
+import { Deck, DeckItem } from '../ context/Deck';
+import { useUniverse } from '../ context/UniverseContext';
 import { getAssortmentColors, getAssortmentLabels } from '../App';
-import { Assortment } from '../lib/Assortment';
-import { Card } from '../lib/Card';
-import { IDeck, IPossibleCard } from '../lib/Deck';
-import { useMutable } from '../lib/Mutable';
 import { CardBase } from './CardBase';
 
 export function DeckView({
 	deck,
 	cardPrefix,
 }: {
-	deck: IDeck;
-	cardPrefix?: (card: IPossibleCard, index: number) => React.ReactNode;
+	deck: Deck;
+	cardPrefix?: (card: DeckItem, index: number) => React.ReactNode;
 }) {
-	const deckNonce = useMutable(deck);
-	const groupedCards = useMemo(
-		() => deck.cards, // groupByAssortment(deck.cards),
-		[deckNonce]
-	);
+	const [universe, dispatch] = useUniverse();
+	const groupedCards = deck.items;
 
-	const colors = useMemo(() => getAssortmentColors(deck.cards), [deckNonce]);
-	const labels = useMemo(() => getAssortmentLabels(deck.cards), [deckNonce]);
+	const colors = useMemo(() => getAssortmentColors(deck.items), [deck]);
+	const labels = useMemo(() => getAssortmentLabels(deck.items), [deck]);
 
 	return (
 		<div>
@@ -44,20 +40,24 @@ export function DeckView({
 									// (1 + Math.min(count, 6) * 0.75).toFixed(1) +
 									'1.75rem',
 								backgroundColor:
-									card instanceof Assortment
-										? colors.get(card)
+									card.type === 'group'
+										? colors.get(card.groupId)
 										: undefined,
 							}}
 						>
-							{card instanceof Card
-								? card.name
-								: `1 of ${Assortment.getTotalCardCount(card)}`}
-							{card instanceof Assortment && (
-								<> Group {labels.get(card)}</>
+							{card.type === 'card'
+								? CardUtil.getCardName(universe, card.cardId)
+								: `1 of ${
+										universe.groups.find(
+											(g) => g.id === card.groupId,
+										)?.cardIds.size
+								  }`}
+							{card.type === 'group' && (
+								<> Group {labels.get(card.groupId)}</>
 							)}
 							{/* x{count} */}
-							{card instanceof Assortment &&
-								card.cards.size < 5 && (
+							{/* {card .type === 'group' &&
+								universe.groups.find(g => g.id === card.groupId)?.cardIds.size < 5 && (
 									<>
 										{' '}
 										(
@@ -68,12 +68,12 @@ export function DeckView({
 														count > 1
 															? ` x${count}`
 															: ''
-													}`
+													}`,
 											)
 											.join(', ')}
 										)
 									</>
-								)}
+								)} */}
 						</CardBase>
 					</li>
 				))}

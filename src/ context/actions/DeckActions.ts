@@ -72,12 +72,17 @@ export function moveCardReducer(
 		return state;
 	}
 
+	const count =
+		action.count === -1
+			? fromDeck.items.length - action.fromIndex
+			: action.count;
+
 	const items = fromDeck.items.slice(
 		action.fromIndex,
-		action.fromIndex + action.count,
+		action.fromIndex + count,
 	);
 
-	if (items.length !== action.count) {
+	if (items.length !== count) {
 		return state;
 	}
 
@@ -85,7 +90,7 @@ export function moveCardReducer(
 		...fromDeck,
 		items: fromDeck.items
 			.slice(0, action.fromIndex)
-			.concat(fromDeck.items.slice(action.fromIndex + action.count)),
+			.concat(fromDeck.items.slice(action.fromIndex + count)),
 	};
 
 	const newToDeck = {
@@ -201,6 +206,95 @@ export function shuffleDeckReducer(
 	};
 }
 
-type DeckActions = CreateDeckAction | MoveCardAction | ShuffleDeckAction;
+export const ACTION_REVEAL_CARD = 'ACTION_REVEAL_CARD';
+
+interface RevealCardAction {
+	type: typeof ACTION_REVEAL_CARD;
+	deckId: Deck['id'];
+	index: number;
+	as?: Card['id'];
+}
+
+export function revealCard(
+	deckId: Deck['id'],
+	index: number,
+	as?: Card['id'],
+): RevealCardAction {
+	return { type: ACTION_REVEAL_CARD, deckId, index, as };
+}
+
+export function revealCardReducer(
+	state: Universe,
+	action: RevealCardAction,
+): Universe {
+	const deck = state.decks.find((deck) => deck.id === action.deckId);
+
+	if (!deck) {
+		return state;
+	}
+
+	const item = deck.items[action.index];
+
+	if (item?.type !== 'group') return state;
+
+	const group = state.groups.find((group) => group.id === item.groupId);
+
+	if (!group) return state;
+
+	let asCard: Card['id'];
+	if (action.as) {
+		asCard = action.as;
+	} else {
+		if (group.cardIds.size > 1) return state;
+
+		asCard = group.cardIds.values().next().value;
+	}
+
+	const newGroupCardIds = new Set(group.cardIds);
+	newGroupCardIds.delete(asCard);
+
+	const newGroup: Group = {
+		...group,
+		cardIds: newGroupCardIds,
+	};
+
+	const newDeck: Deck = {
+		...deck,
+		items: deck.items.map((item, index) => {
+			if (index === action.index) {
+				return {
+					type: 'card',
+					cardId: asCard,
+				};
+			}
+
+			return item;
+		}),
+	};
+
+	return {
+		...state,
+		groups: state.groups.map((group) => {
+			if (group.id === newGroup.id) {
+				return newGroup;
+			}
+
+			return group;
+		}),
+		decks: state.decks.map((deck) => {
+			if (deck.id === newDeck.id) {
+				return newDeck;
+			}
+
+			return deck;
+		}),
+	};
+}
+
+type DeckActions =
+	| CreateDeckAction
+	| MoveCardAction
+	| ShuffleDeckAction
+	| RevealCardAction;
 
 export default DeckActions;

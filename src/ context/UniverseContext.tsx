@@ -15,13 +15,19 @@ import CardActions, {
 	destroyCardReducer,
 } from './actions/CardActions';
 import DeckActions, {
+	ACTION_CREATE_DECK,
 	ACTION_MOVE_CARD,
+	ACTION_REVEAL_CARD,
 	ACTION_SHUFFLE_DECK,
+	createDeckReducer,
 	moveCardReducer,
+	revealCardReducer,
 	shuffleDeckReducer,
 } from './actions/DeckActions';
 import UniverseActions, {
+	ACTION_LOAD,
 	ACTION_RESET,
+	loadReducer,
 	resetReducer,
 } from './actions/UniverseActions';
 
@@ -32,6 +38,11 @@ const universeReducer: Reducer<
 	switch (action.type) {
 		case ACTION_RESET:
 			return resetReducer(state, action);
+		case ACTION_LOAD:
+			return loadReducer(state, action);
+
+		case ACTION_CREATE_DECK:
+			return createDeckReducer(state, action);
 
 		case ACTION_CREATE_CARD:
 			return createCardReducer(state, action);
@@ -42,6 +53,8 @@ const universeReducer: Reducer<
 			return moveCardReducer(state, action);
 		case ACTION_SHUFFLE_DECK:
 			return shuffleDeckReducer(state, action);
+		case ACTION_REVEAL_CARD:
+			return revealCardReducer(state, action);
 
 		default:
 			const _exhaustiveCheck: never = action;

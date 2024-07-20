@@ -19,10 +19,20 @@ import {
 	useMemo,
 	useState,
 } from 'react';
+import { Card } from './ context/Card';
+import CardUtil from './ context/CardUtil';
+import { DeckItem } from './ context/Deck';
+import DeckUtil from './ context/DeckUtil';
+import { Group } from './ context/Group';
 import { useUniverse } from './ context/UniverseContext';
 import { createCards } from './ context/actions/CardActions';
-import { createDeck, shuffleDeck } from './ context/actions/DeckActions';
-import { reset } from './ context/actions/UniverseActions';
+import {
+	createDeck,
+	moveCard,
+	revealCard,
+	shuffleDeck,
+} from './ context/actions/DeckActions';
+import { load, reset } from './ context/actions/UniverseActions';
 import './App.css';
 import { CardBase } from './components/CardBase';
 import { DeckView } from './components/DeckView';
@@ -32,11 +42,8 @@ import { Input } from './components/common/Input';
 import { Select } from './components/common/Select';
 import { H2 } from './components/common/Typography';
 import { cities } from './data/cities';
-import { Assortment, IAssortment } from './lib/Assortment';
-import { Card } from './lib/Card';
-import { Deck, IPossibleCard, IReadonlyPossibleCard } from './lib/Deck';
 
-const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
+// const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
 // const shuffledCityCards = new Assortment(
 // 	new Map(
 // 		cityCards.map((card) => [
@@ -71,6 +78,9 @@ function createStripeyBackground(colors: string[]): string {
 		.join(', ')})`;
 }
 
+const INFECTION_DECK = 'Infection Deck';
+const DISCARD_DECK = 'Discard Deck';
+
 function App() {
 	const [drawCount, setDrawCountRaw] = useState(1);
 	const [topDrawFormVisible, setTopDrawFormVisible] = useState(false);
@@ -92,68 +102,95 @@ function App() {
 
 	useEffect(() => {
 		dispatch(reset());
-		dispatch(createDeck('Infection Deck'));
+		dispatch(createDeck(INFECTION_DECK));
 		dispatch(
 			createCards(
-				'Infection Deck',
+				INFECTION_DECK,
 				...Object.entries(cities).flatMap(([city, count]) =>
 					new Array(count).fill(city),
 				),
 			),
 		);
-		dispatch(shuffleDeck('Infection Deck'));
-		dispatch(createDeck('Discard Deck'));
+		dispatch(shuffleDeck(INFECTION_DECK));
+		dispatch(createDeck(DISCARD_DECK));
 	}, []);
 
+	const infectionDeck = universe.decks.find(
+		(deck) => deck.id === INFECTION_DECK,
+	);
+
+	const discardDeck = universe.decks.find((deck) => deck.id === DISCARD_DECK);
+
 	const cardDrawProbabilities = useMemo(() => {
-		const allTheCards = infectionDeck.cards
+		if (!infectionDeck) return [];
+
+		const allTheCardIds = infectionDeck.items
 			.slice(0, drawCount)
 			.reduce((cards, item) => {
-				if (item instanceof Card) {
-					cards.add(item);
-				} else {
-					for (const [card] of item.cards) {
-						cards.add(card);
+				switch (item.type) {
+					case 'card': {
+						cards.add(item.cardId);
+						break;
+					}
+					case 'group': {
+						const group = universe.groups.find(
+							(group) => group.id === item.groupId,
+						)!;
+
+						group.cardIds.forEach((cId) => cards.add(cId));
+						break;
 					}
 				}
 
 				return cards;
-			}, new Set<Card>());
+			}, new Set<Card['id']>());
 
-		return [...allTheCards]
-			.map((card) => {
-				const probability = Deck.calculateDrawChance(
-					infectionDeck,
-					card,
-					drawCount,
-				);
+		const allTheCardNames = new Set(
+			Array.from(allTheCardIds).map(
+				(id) => universe.cards.find((card) => card.id === id)!.name,
+			),
+		);
 
-				return { card, probability };
-			})
-			.sort((a, b) => b.probability - a.probability);
-	}, [infectionNonce, drawCount]);
+		const result = [...allTheCardNames].map((cardName) => {
+			const probability = DeckUtil.calculateDrawChance(
+				universe,
+				infectionDeck,
+				cardName,
+				drawCount,
+			);
+
+			return { cardName, probability };
+		});
+
+		result.sort((a, b) => b.probability - a.probability);
+
+		return result;
+	}, [universe, drawCount]);
 
 	const colors = useMemo(
-		() => getAssortmentColors(infectionDeck.cards.slice(0, drawCount)),
-		[infectionNonce, drawCount],
+		() =>
+			getAssortmentColors(
+				(infectionDeck?.items ?? []).slice(0, drawCount),
+			),
+		[infectionDeck, drawCount],
 	);
 
 	const nextDrawOptions = useMemo(() => {
-		const top = infectionDeck.peek(0);
+		const top = infectionDeck?.items[0];
 		if (top) {
-			return Assortment.getCardOptions(top);
+			return DeckUtil.getCardOptions(universe, top);
 		}
 		return [];
-	}, [infectionNonce]);
+	}, [infectionDeck]);
 
 	const nextBottomDrawOptions = useMemo(() => {
-		const bottom = infectionDeck.peek(-1)!;
+		const bottom = infectionDeck?.items[infectionDeck.items.length - 1];
 		if (bottom) {
-			return Assortment.getCardOptions(bottom);
+			return DeckUtil.getCardOptions(universe, bottom);
 		}
 
 		return [];
-	}, [infectionNonce]);
+	}, [infectionDeck]);
 
 	return (
 		<div
@@ -211,10 +248,18 @@ function App() {
 					}}
 				>
 					{cardDrawProbabilities.map(
-						({ card, probability }, index) => {
+						({ cardName, probability }, index) => {
 							const color = [...colors.entries()]
 								.filter(([assortment]) =>
-									assortment.cards.has(card),
+									Array.from(
+										universe.groups.find(
+											(g) => g.id === assortment,
+										)!.cardIds,
+									)
+										.map((id) =>
+											CardUtil.getCardName(universe, id),
+										)
+										.includes(cardName),
 								)
 								.map(([, color]) => color);
 							return (
@@ -228,7 +273,7 @@ function App() {
 												createStripeyBackground(color),
 										}}
 									>
-										<h3>{card.name}</h3>
+										<h3>{cardName}</h3>
 										<p>{(probability * 100).toFixed(2)}%</p>
 									</CardBase>
 								</li>
@@ -242,8 +287,7 @@ function App() {
 					onClick={() => {
 						const data = JSON.stringify(
 							{
-								infectionDeck: infectionDeck.toJson(),
-								discardDeck: discardDeck.toJson(),
+								universe,
 								drawCount,
 							},
 							null,
@@ -274,24 +318,26 @@ function App() {
 
 							const data = await file.text();
 							const json = JSON.parse(data);
+							//TODO: Validate structure
 
-							const infecDec = Deck.fromJson(json.infectionDeck);
-							infectionDeck.remove(0, infectionDeck.cards.length);
-							infectionDeck.insert(
-								infecDec.cards as unknown as IPossibleCard[],
-								0,
-							);
-							infecDec.remove(0, infecDec.cards.length);
-							infectionDeck.name = infecDec.name;
+							dispatch(load(json.universe));
+							// const infecDec = Deck.fromJson(json.infectionDeck);
+							// infectionDeck.remove(0, infectionDeck.cards.length);
+							// infectionDeck.insert(
+							// 	infecDec.cards as unknown as IPossibleCard[],
+							// 	0,
+							// );
+							// infecDec.remove(0, infecDec.cards.length);
+							// infectionDeck.name = infecDec.name;
 
-							const discDec = Deck.fromJson(json.discardDeck);
-							discardDeck.remove(0, discardDeck.cards.length);
-							discardDeck.insert(
-								discDec.cards as unknown as IPossibleCard[],
-								0,
-							);
-							discDec.remove(0, discDec.cards.length);
-							discardDeck.name = discDec.name;
+							// const discDec = Deck.fromJson(json.discardDeck);
+							// discardDeck.remove(0, discardDeck.cards.length);
+							// discardDeck.insert(
+							// 	discDec.cards as unknown as IPossibleCard[],
+							// 	0,
+							// );
+							// discDec.remove(0, discDec.cards.length);
+							// discardDeck.name = discDec.name;
 
 							setDrawCount(json.drawCount);
 						};
@@ -302,11 +348,7 @@ function App() {
 				</Button>
 				<Button
 					onClick={() => {
-						const data = JSON.stringify(
-							infectionDeck.toJson(),
-							null,
-							2,
-						);
+						const data = JSON.stringify(universe, null, 2);
 
 						setEditDeckData(data);
 						setEditDeckFormVisible(true);
@@ -318,16 +360,16 @@ function App() {
 			<section>
 				<Button
 					onClick={() => {
-						if (infectionDeck.cards.length === 0) return;
+						if (!infectionDeck || !nextDrawOptions) return;
+						if (infectionDeck.items.length === 0) return;
 
 						if (nextDrawOptions.length > 0)
 							setTopDrawFormVisible(true);
 						else {
-							const stack = infectionDeck
-								.remove(0, 1)
-								.map(Assortment.reveal);
-
-							discardDeck.insert(stack, 0);
+							dispatch(
+								moveCard(INFECTION_DECK, 0, DISCARD_DECK, 0, 1),
+							);
+							dispatch(revealCard(DISCARD_DECK, 0));
 						}
 					}}
 					title="Draw Cards from the top of the deck"
@@ -336,16 +378,22 @@ function App() {
 				</Button>
 				<Button
 					onClick={() => {
-						if (infectionDeck.cards.length === 0) return;
+						if (!infectionDeck || !nextBottomDrawOptions) return;
+						if (infectionDeck.items.length === 0) return;
 
 						if (nextBottomDrawOptions.length > 0)
 							setBottomDrawFormVisible(true);
 						else {
-							const stack = infectionDeck
-								.remove(-1, 1)
-								.map(Assortment.reveal);
-
-							discardDeck.insert(stack, 0);
+							dispatch(
+								moveCard(
+									INFECTION_DECK,
+									-1,
+									DISCARD_DECK,
+									0,
+									1,
+								),
+							);
+							dispatch(revealCard(DISCARD_DECK, 0));
 						}
 					}}
 					title="Draw a card from the bottom of the deck"
@@ -354,14 +402,10 @@ function App() {
 				</Button>
 				<Button
 					onClick={() => {
-						discardDeck.shuffle();
-
-						const cards = discardDeck.remove(
-							0,
-							discardDeck.cards.length,
+						dispatch(shuffleDeck(DISCARD_DECK));
+						dispatch(
+							moveCard(DISCARD_DECK, 0, INFECTION_DECK, 0, -1),
 						);
-
-						infectionDeck.insert(cards, 0);
 					}}
 				>
 					Shuffle and Restack <FontAwesomeIcon icon={faShuffle} />
@@ -376,49 +420,50 @@ function App() {
 					isolation: 'isolate',
 				}}
 			>
-				<section
-					style={{
-						display: 'flex',
-						flexDirection: 'column',
-					}}
-				>
-					<H2>{infectionDeck.name}</H2>
-					<DeckView
-						deck={infectionDeck}
-						cardPrefix={(card, index) => {
-							if (index < drawCount) {
-								return (
-									<FontAwesomeIcon
-										title="This card will be drawn"
-										icon={faStar}
-									/>
-								);
-							}
-							return null;
+				{infectionDeck && (
+					<section
+						style={{
+							display: 'flex',
+							flexDirection: 'column',
 						}}
-					/>
-				</section>
-				<section
-					style={{
-						display: 'flex',
-						flexDirection: 'column',
-					}}
-				>
-					<H2>{discardDeck.name}</H2>
-					<DeckView deck={discardDeck} />
-				</section>
+					>
+						<H2>{infectionDeck.id}</H2>
+
+						<DeckView
+							deck={infectionDeck}
+							cardPrefix={(card, index) => {
+								if (index < drawCount) {
+									return (
+										<FontAwesomeIcon
+											title="This card will be drawn"
+											icon={faStar}
+										/>
+									);
+								}
+								return null;
+							}}
+						/>
+					</section>
+				)}
+				{discardDeck && (
+					<section
+						style={{
+							display: 'flex',
+							flexDirection: 'column',
+						}}
+					>
+						<H2>{discardDeck.id}</H2>
+						<DeckView deck={discardDeck} />
+					</section>
+				)}
 			</section>
 			<Popup visible={editDeckFormVisible}>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
-						const json = Deck.fromJson(JSON.parse(editDeckData));
-						infectionDeck.remove(0, infectionDeck.cards.length);
-						infectionDeck.insert(
-							json.cards as unknown as IPossibleCard[],
-							0,
-						);
-						infectionDeck.name = json.name;
+						const json = JSON.parse(editDeckData);
+						//TODO: Validate structure
+						dispatch(load(json));
 						setEditDeckFormVisible(false);
 					}}
 					style={{
@@ -451,47 +496,34 @@ function App() {
 			</Popup>
 			<Popup visible={topDrawFormVisible}>
 				<SelectCardForm
-					options={nextDrawOptions}
+					options={nextDrawOptions ?? []}
 					onCancel={() => {
 						setTopDrawFormVisible(false);
 					}}
 					onSelectCard={(card) => {
-						const top = infectionDeck.remove(0, 1)[0]!;
-						if (top instanceof Card && top !== card) {
-							throw new Error('Unexpected card selected');
-						}
+						if (!infectionDeck) return;
 
-						if (top instanceof Assortment) {
-							Assortment.subtract(
-								top,
-								new Assortment(new Map([[card, 1]])),
-							);
-						}
+						dispatch(
+							moveCard(INFECTION_DECK, 0, DISCARD_DECK, 0, 1),
+						);
+						dispatch(revealCard(DISCARD_DECK, 0));
 
-						discardDeck.insert([card], -1);
+						setTopDrawFormVisible(false);
 					}}
 				/>
 			</Popup>
 			<Popup visible={bottomDrawFormVisible}>
 				<SelectCardForm
-					options={nextBottomDrawOptions}
+					options={nextBottomDrawOptions ?? []}
 					onCancel={() => {
 						setBottomDrawFormVisible(false);
 					}}
 					onSelectCard={(card) => {
-						const top = infectionDeck.remove(-1, 1)[0]!;
-						if (top instanceof Card && top !== card) {
-							throw new Error('Unexpected card selected');
-						}
+						dispatch(
+							moveCard(INFECTION_DECK, -1, DISCARD_DECK, 0, 1),
+						);
+						dispatch(revealCard(DISCARD_DECK, 0));
 
-						if (top instanceof Assortment) {
-							Assortment.subtract(
-								top,
-								new Assortment(new Map([[card, 1]])),
-							);
-						}
-
-						discardDeck.insert([card], -1);
 						setBottomDrawFormVisible(false);
 					}}
 				/>
@@ -505,19 +537,19 @@ function SelectCardForm({
 	onCancel,
 	onSelectCard,
 }: {
-	options: Card[];
+	options: Card['name'][];
 	onCancel: () => void;
-	onSelectCard: (card: Card) => void;
+	onSelectCard: (card: Card['name']) => void;
 }) {
-	const [cardName, setCardName] = useState(options[0]!.name);
+	const [cardName, setCardName] = useState(options[0]);
 
 	useEffect(() => {
 		if (options.length === 0) {
 			onCancel();
 			return;
 		}
-		if (!options.some((card) => card.name === cardName)) {
-			setCardName(options[0].name);
+		if (!options.some((cardName) => cardName === cardName)) {
+			setCardName(options[0]);
 		}
 	}, [options]);
 
@@ -526,7 +558,7 @@ function SelectCardForm({
 			onSubmit={(e) => {
 				e.preventDefault();
 
-				const card = options.find((card) => card.name === cardName)!;
+				const card = options.find((cardName) => cardName === cardName)!;
 				onSelectCard(card);
 			}}
 		>
@@ -536,9 +568,9 @@ function SelectCardForm({
 					setCardName(e.target.value);
 				}}
 			>
-				{options.map((card) => (
-					<option value={card.name} key={card.name}>
-						{card.name}
+				{options.map((cardName) => (
+					<option value={cardName} key={cardName}>
+						{cardName}
 					</option>
 				))}
 			</Select>
@@ -551,14 +583,17 @@ function SelectCardForm({
 }
 
 export function getAssortmentColors(
-	deck: readonly IReadonlyPossibleCard[],
-): Map<IAssortment, string> {
-	const assortments = new Map<IAssortment, string>();
+	deck: readonly DeckItem[],
+): Map<Group['id'], string> {
+	const assortments = new Map<Group['id'], string>();
 
 	for (const card of deck) {
-		if (card instanceof Assortment) {
-			if (!assortments.has(card)) {
-				assortments.set(card, getNthNiceColor(assortments.size));
+		if (card.type === 'group') {
+			if (!assortments.has(card.groupId)) {
+				assortments.set(
+					card.groupId,
+					getNthNiceColor(assortments.size),
+				);
 			}
 		}
 	}
@@ -567,15 +602,15 @@ export function getAssortmentColors(
 }
 
 export function getAssortmentLabels(
-	deck: readonly IReadonlyPossibleCard[],
-): Map<IAssortment, string> {
-	const assortments = new Map<IAssortment, string>();
+	deck: readonly DeckItem[],
+): Map<Group['id'], string> {
+	const assortments = new Map<Group['id'], string>();
 
 	for (const card of deck) {
-		if (card instanceof Assortment) {
-			if (!assortments.has(card)) {
+		if (card.type === 'group') {
+			if (!assortments.has(card.groupId)) {
 				assortments.set(
-					card,
+					card.groupId,
 					String.fromCharCode(65 + assortments.size),
 				);
 			}
