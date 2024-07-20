@@ -1,5 +1,4 @@
 import { Card } from '../Card';
-import CardUtil from '../CardUtil';
 import { Deck, DeckItem } from '../Deck';
 import { Group } from '../Group';
 import { Universe } from '../Universe';
@@ -211,104 +210,6 @@ export function shuffleDeckReducer(
 	};
 }
 
-export const ACTION_REVEAL_CARD = 'ACTION_REVEAL_CARD';
-
-interface RevealCardAction {
-	type: typeof ACTION_REVEAL_CARD;
-	deckId: Deck['id'];
-	index: number;
-	as: Card['id'];
-}
-
-export function revealCard(
-	deckId: Deck['id'],
-	index: number,
-	as: Card['id'],
-): RevealCardAction {
-	return { type: ACTION_REVEAL_CARD, deckId, index, as };
-}
-
-export function revealCardReducer(
-	state: Universe,
-	action: RevealCardAction,
-): Universe {
-	const deck = state.decks.find((deck) => deck.id === action.deckId);
-
-	if (!deck) {
-		return state;
-	}
-
-	const item = deck.items[action.index];
-
-	if (item?.type !== 'group') return state;
-
-	const group = state.groups.find((group) => group.id === item.groupId);
-
-	if (!group) return state;
-
-	let asCard: Card['id'];
-	if (action.as) {
-		asCard = action.as;
-	} else {
-		if (group.cardIds.size > 1) return state;
-
-		asCard = group.cardIds.values().next().value;
-	}
-
-	const newGroupCardIds = Array.from(group.cardIds);
-
-	const asCardIndex = newGroupCardIds.findIndex(
-		(cid) => CardUtil.getCardName(state, cid) === asCard,
-	);
-
-	if (asCardIndex === -1) return state;
-
-	const [revealedCardId] = newGroupCardIds.splice(asCardIndex, 1);
-
-	const newGroup: Group = {
-		...group,
-		cardIds: new Set(newGroupCardIds),
-	};
-
-	const newDeck: Deck = {
-		...deck,
-		items: deck.items.map((item, index) => {
-			if (index === action.index) {
-				return {
-					type: 'card',
-					cardId: revealedCardId,
-				};
-			}
-
-			return item;
-		}),
-	};
-
-	return {
-		...state,
-		groups: state.groups
-			.map((group) => {
-				if (group.id === newGroup.id) {
-					return newGroup;
-				}
-
-				return group;
-			})
-			.filter((g) => g.cardIds.size > 0),
-		decks: state.decks.map((deck) => {
-			if (deck.id === newDeck.id) {
-				return newDeck;
-			}
-
-			return deck;
-		}),
-	};
-}
-
-type DeckActions =
-	| CreateDeckAction
-	| MoveCardAction
-	| ShuffleDeckAction
-	| RevealCardAction;
+type DeckActions = CreateDeckAction | MoveCardAction | ShuffleDeckAction;
 
 export default DeckActions;

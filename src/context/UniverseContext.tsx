@@ -17,13 +17,15 @@ import CardActions, {
 import DeckActions, {
 	ACTION_CREATE_DECK,
 	ACTION_MOVE_CARD,
-	ACTION_REVEAL_CARD,
 	ACTION_SHUFFLE_DECK,
 	createDeckReducer,
 	moveCardReducer,
-	revealCardReducer,
 	shuffleDeckReducer,
 } from './actions/DeckActions';
+import GroupActions, {
+	ACTION_REVEAL_CARD,
+	revealCardReducer,
+} from './actions/GroupActions';
 import UniverseActions, {
 	ACTION_LOAD,
 	ACTION_RESET,
@@ -38,7 +40,7 @@ import {
 
 const universeReducer: Reducer<
 	Universe,
-	CardActions | DeckActions | UniverseActions
+	CardActions | DeckActions | UniverseActions | GroupActions
 > = (state, action) => {
 	switch (action.type) {
 		case ACTION_RESET:
@@ -58,6 +60,7 @@ const universeReducer: Reducer<
 			return moveCardReducer(state, action);
 		case ACTION_SHUFFLE_DECK:
 			return shuffleDeckReducer(state, action);
+
 		case ACTION_REVEAL_CARD:
 			return revealCardReducer(state, action);
 

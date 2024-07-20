@@ -13,7 +13,7 @@ export function DeckView({
 	deck: Deck;
 	cardPrefix?: (card: DeckItem, index: number) => React.ReactNode;
 }) {
-	const [universe, dispatch] = useUniverse();
+	const [universe, _dispatch] = useUniverse();
 	const groupedCards = deck.items;
 
 	const colors = useMemo(() => getAssortmentColors(deck.items), [deck]);

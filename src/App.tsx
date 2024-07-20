@@ -39,9 +39,9 @@ import { createCards } from './context/actions/CardActions';
 import {
 	createDeck,
 	moveCard,
-	revealCard,
 	shuffleDeck,
 } from './context/actions/DeckActions';
+import { revealCard } from './context/actions/GroupActions';
 import { load, reset } from './context/actions/UniverseActions';
 import { redoAction, undoAction } from './context/withUndoReducer';
 import { cities } from './data/cities';
