@@ -506,9 +506,7 @@ function App() {
 						dispatch(
 							moveCard(INFECTION_DECK, 0, DISCARD_DECK, 0, 1),
 						);
-						dispatch(revealCard(DISCARD_DECK, 0));
-
-						setTopDrawFormVisible(false);
+						dispatch(revealCard(DISCARD_DECK, 0, card));
 					}}
 				/>
 			</Popup>

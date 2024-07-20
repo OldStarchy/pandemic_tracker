@@ -1,5 +1,5 @@
 import { Card } from '../Card';
-import { Deck } from '../Deck';
+import { Deck, DeckItem } from '../Deck';
 import { Group } from '../Group';
 import { Universe } from '../Universe';
 
@@ -194,10 +194,12 @@ export function shuffleDeckReducer(
 			if (deck.id === action.deckId) {
 				return {
 					...deck,
-					items: cardsInNewGroup.map((cardId) => ({
-						type: 'card',
-						cardId,
-					})),
+					items: cardsInNewGroup.map(
+						(): DeckItem => ({
+							type: 'group',
+							groupId: newGroup.id,
+						}),
+					),
 				};
 			}
 
