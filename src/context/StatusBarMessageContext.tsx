@@ -1,7 +1,7 @@
-import { Dispatch, SetStateAction, createContext, useContext } from 'react';
+import { createContext, useContext } from 'react';
 
 const StatusBarMessageContext = createContext<
-	undefined | Dispatch<SetStateAction<string | null>>
+	undefined | ((message: string | null) => void)
 >(undefined);
 
 export function useStatusBarContext() {

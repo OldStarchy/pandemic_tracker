@@ -36,6 +36,7 @@ import { Select } from './components/common/Select';
 import { H2 } from './components/common/Typography';
 import CreateCardForm from './components/form/CreateCardForm';
 import { DISCARD_DECK, INFECTION_DECK, TEMP_DECK } from './consts';
+import { useStatusBarContext } from './context/StatusBarMessageContext';
 import { Card } from './context/universe/Card';
 import CardUtil from './context/universe/CardUtil';
 import { DeckItem } from './context/universe/Deck';
@@ -61,6 +62,7 @@ import {
 } from './context/withUndoReducer';
 import { cities } from './data/cities';
 import { createSave, loadSave } from './lib/SaveFormat';
+import { getAutosave, saveToAutosave } from './lib/autosave';
 
 // const cityCards = Object.keys(cities).map((city) => Card.get({ name: city }));
 // const shuffledCityCards = new Assortment(
@@ -107,17 +109,9 @@ function App() {
 
 	const [expandDrawChanceList, setExpandDrawChanceList] = useState(false);
 
-	const setDrawCount = useCallback<Dispatch<SetStateAction<number>>>(
-		(count) => {
-			setDrawCountRaw((c) =>
-				Math.max(1, typeof count === 'number' ? count : count(c)),
-			);
-		},
-		[setDrawCountRaw],
-	);
-
 	const [universe, dispatch] = useUniverse();
 	const { canUndo, canRedo } = useCanUndo();
+	const setStatusBarMessage = useStatusBarContext();
 
 	const [selectedCardsToDelete, setSelectedCardsToDelete] = useState<
 		Record<string, number>
@@ -148,31 +142,88 @@ function App() {
 		dispatch(setKeyframe());
 	}, [selectedCardsToDelete, universe.cards]);
 
+	const [enableAutoSave, setEnableAutoSave] = useState(false);
 	useEffect(() => {
 		dispatch(reset());
 
-		dispatch(createDeck(INFECTION_DECK));
-		dispatch(createDeck(DISCARD_DECK));
-		dispatch(createDeck(TEMP_DECK));
+		const autosave = getAutosave();
+		if (autosave) {
+			const data = loadSave(JSON.parse(autosave));
+			dispatch(load(data.universe));
+			setDrawCount(data.drawCount);
+			setStatusBarMessage('Autosave loaded');
+			dispatch(clearHistory());
+			setEnableAutoSave(true);
+		} else {
+			dispatch(createDeck(INFECTION_DECK));
+			dispatch(createDeck(DISCARD_DECK));
+			dispatch(createDeck(TEMP_DECK));
 
-		dispatch(
-			createCards(
-				INFECTION_DECK,
-				...Object.entries(cities).flatMap(([city, count]) =>
-					new Array(count).fill(city),
+			dispatch(
+				createCards(
+					INFECTION_DECK,
+					...Object.entries(cities).flatMap(([city, count]) =>
+						new Array(count).fill(city),
+					),
 				),
-			),
-		);
-		dispatch(shuffleDeck(INFECTION_DECK));
+			);
+			dispatch(shuffleDeck(INFECTION_DECK));
+			setEnableAutoSave(true);
+		}
 
 		dispatch(clearHistory());
 	}, []);
 
-	const infectionDeck = universe.decks.find(
-		(deck) => deck.id === INFECTION_DECK,
+	useEffect(() => {
+		if (enableAutoSave) {
+			saveToAutosave(JSON.stringify(createSave({ universe, drawCount })));
+		}
+	}, [universe, drawCount, enableAutoSave]);
+
+	const infectionDeck = useMemo(
+		() => universe.decks.find((deck) => deck.id === INFECTION_DECK),
+		[universe.decks],
 	);
 
-	const discardDeck = universe.decks.find((deck) => deck.id === DISCARD_DECK);
+	const discardDeck = useMemo(
+		() => universe.decks.find((deck) => deck.id === DISCARD_DECK),
+		[universe.decks],
+	);
+
+	const canShuffleInfectionDeck = useMemo(() => {
+		if (!infectionDeck) return false;
+		if (infectionDeck.items.length === 0) return false;
+
+		if (infectionDeck.items.some((item) => item.type === 'card'))
+			return true;
+
+		const group = (infectionDeck.items[0] as DeckItem & { type: 'group' })
+			.groupId;
+
+		if (
+			(infectionDeck.items as (DeckItem & { type: 'group' })[]).some(
+				(item) => item.groupId !== group,
+			)
+		)
+			return true;
+
+		return false;
+	}, [infectionDeck?.items]);
+
+	const setDrawCount = useCallback<Dispatch<SetStateAction<number>>>(
+		(count) => {
+			setDrawCountRaw((c) =>
+				Math.max(
+					1,
+					Math.min(
+						infectionDeck?.items.length ?? Infinity,
+						typeof count === 'number' ? count : count(c),
+					),
+				),
+			);
+		},
+		[setDrawCountRaw, infectionDeck],
+	);
 
 	const cardDrawProbabilities = useMemo(() => {
 		if (!infectionDeck) return [];
@@ -255,43 +306,6 @@ function App() {
 				gap: '0.5rem',
 			}}
 		>
-			<section>
-				<div
-					style={{
-						display: 'flex',
-						alignItems: 'center',
-						gap: 'var(--gap-buttons)',
-					}}
-				>
-					<Button
-						style={{ aspectRatio: '1' }}
-						onClick={() => {
-							setDrawCount((d) => d - 1);
-						}}
-					>
-						<FontAwesomeIcon icon={faMinus} />
-					</Button>
-					<Input
-						type="number"
-						label="Draw Count"
-						statusBarMessage="Select the number of cards you will draw. This will affect the draw probabilities."
-						min="1"
-						style={{ flexGrow: 1 }}
-						value={drawCount}
-						onChange={(e) => {
-							setDrawCount(parseInt(e.target.value));
-						}}
-					/>
-					<Button
-						style={{ aspectRatio: '1' }}
-						onClick={() => {
-							setDrawCount((d) => d + 1);
-						}}
-					>
-						<FontAwesomeIcon icon={faPlus} />
-					</Button>
-				</div>
-			</section>
 			<section
 				style={{
 					display: 'flex',
@@ -311,70 +325,6 @@ function App() {
 				>
 					Redo <FontAwesomeIcon icon={faRedo} />
 				</Button>
-			</section>
-			<section>
-				<header style={{ display: 'flex', gap: '1rem' }}>
-					<H2>Draw Chance</H2>
-					<Button
-						type="button"
-						onClick={() => setExpandDrawChanceList((e) => !e)}
-					>
-						<FontAwesomeIcon
-							icon={
-								expandDrawChanceList
-									? faChevronUp
-									: faChevronDown
-							}
-						/>
-					</Button>
-				</header>
-				<ol
-					style={{
-						display: 'flex',
-						flexDirection: 'column',
-						gap: '0.25rem',
-					}}
-				>
-					{cardDrawProbabilities
-						.slice(0, expandDrawChanceList ? undefined : 5)
-						.map(({ cardName, probability }, index) => {
-							const color = [...colors.entries()]
-								.filter(([assortment]) =>
-									Array.from(
-										universe.groups.find(
-											(g) => g.id === assortment,
-										)!.cardIds,
-									)
-										.map((id) =>
-											CardUtil.getCardName(universe, id),
-										)
-										.includes(cardName),
-								)
-								.map(([, color]) => color);
-							return (
-								<li key={index}>
-									<CardBase
-										style={{
-											display: 'flex',
-											justifyContent: 'space-between',
-											alignItems: 'center',
-											background:
-												createStripeyBackground(color),
-										}}
-									>
-										<h3>{cardName}</h3>
-										<p>{(probability * 100).toFixed(2)}%</p>
-									</CardBase>
-								</li>
-							);
-						})}
-					{!expandDrawChanceList &&
-						cardDrawProbabilities.length > 5 && (
-							<li key="more">
-								<FontAwesomeIcon icon={faEllipsis} />
-							</li>
-						)}
-				</ol>
 			</section>
 			<section
 				style={{
@@ -444,6 +394,113 @@ function App() {
 					Edit Infction Deck <FontAwesomeIcon icon={faEdit} />
 				</Button>
 			</section>
+			<section>
+				<header style={{ display: 'flex', gap: '1rem' }}>
+					<H2>Draw Chance</H2>
+					{cardDrawProbabilities.length > 5 && (
+						<Button
+							type="button"
+							onClick={() => setExpandDrawChanceList((e) => !e)}
+						>
+							<FontAwesomeIcon
+								icon={
+									expandDrawChanceList
+										? faChevronUp
+										: faChevronDown
+								}
+							/>
+						</Button>
+					)}
+				</header>
+
+				<div
+					style={{
+						display: 'flex',
+						alignItems: 'center',
+						gap: 'var(--gap-buttons)',
+					}}
+				>
+					<Button
+						style={{ aspectRatio: '1' }}
+						onClick={() => {
+							setDrawCount((d) => d - 1);
+						}}
+					>
+						<FontAwesomeIcon icon={faMinus} />
+					</Button>
+					<Input
+						type="number"
+						label="Draw Count"
+						statusBarMessage="Select the number of cards you will draw. This will affect the draw probabilities."
+						min="1"
+						max={infectionDeck?.items.length}
+						style={{ flexGrow: 1 }}
+						value={drawCount}
+						onChange={(e) => {
+							setDrawCount(parseInt(e.target.value));
+						}}
+					/>
+					<Button
+						style={{ aspectRatio: '1' }}
+						onClick={() => {
+							setDrawCount((d) => d + 1);
+						}}
+					>
+						<FontAwesomeIcon icon={faPlus} />
+					</Button>
+				</div>
+
+				{cardDrawProbabilities.length === 0 && (
+					<p>No cards in Infection Deck to draw.</p>
+				)}
+				<ol
+					style={{
+						display: 'flex',
+						flexDirection: 'column',
+						gap: '0.25rem',
+					}}
+				>
+					{cardDrawProbabilities
+						.slice(0, expandDrawChanceList ? undefined : 5)
+						.map(({ cardName, probability }, index) => {
+							const color = [...colors.entries()]
+								.filter(([assortment]) =>
+									Array.from(
+										universe.groups.find(
+											(g) => g.id === assortment,
+										)!.cardIds,
+									)
+										.map((id) =>
+											CardUtil.getCardName(universe, id),
+										)
+										.includes(cardName),
+								)
+								.map(([, color]) => color);
+							return (
+								<li key={index}>
+									<CardBase
+										style={{
+											display: 'flex',
+											justifyContent: 'space-between',
+											alignItems: 'center',
+											background:
+												createStripeyBackground(color),
+										}}
+									>
+										<h3>{cardName}</h3>
+										<p>{(probability * 100).toFixed(2)}%</p>
+									</CardBase>
+								</li>
+							);
+						})}
+					{!expandDrawChanceList &&
+						cardDrawProbabilities.length > 5 && (
+							<li key="more">
+								<FontAwesomeIcon icon={faEllipsis} />
+							</li>
+						)}
+				</ol>
+			</section>
 			<section
 				style={{
 					display: 'flex',
@@ -459,6 +516,7 @@ function App() {
 						setTopDrawFormVisible(true);
 					}}
 					title="Draw Cards from the top of the deck"
+					disabled={(infectionDeck?.items.length ?? 0) === 0}
 				>
 					Draw Top <FontAwesomeIcon icon={faArrowUp} />
 				</Button>
@@ -470,6 +528,7 @@ function App() {
 						setBottomDrawFormVisible(true);
 					}}
 					title="Draw a card from the bottom of the deck"
+					disabled={(infectionDeck?.items.length ?? 0) === 0}
 				>
 					Draw Bottom <FontAwesomeIcon icon={faArrowTurnUp} />
 				</Button>
@@ -481,6 +540,7 @@ function App() {
 						);
 						dispatch(setKeyframe());
 					}}
+					disabled={(discardDeck?.items.length ?? 0) === 0}
 				>
 					Shuffle and Restack <FontAwesomeIcon icon={faShuffle} />
 				</Button>
@@ -490,6 +550,7 @@ function App() {
 						dispatch(shuffleDeck(INFECTION_DECK));
 						dispatch(setKeyframe());
 					}}
+					disabled={!canShuffleInfectionDeck}
 				>
 					Shuffle the Infection Deck{' '}
 					<FontAwesomeIcon icon={faShuffle} />

@@ -121,10 +121,12 @@ export function loadSave(data: SaveFormatV0 | SaveFormatV1): {
 
 					const group = groupIdMap.get(groupId)!;
 
-					toDeck.items.push({
-						type: 'group' as const,
-						groupId: group.id,
-					});
+					toDeck.items.push(
+						...Array.from({ length: card.count }, () => ({
+							type: 'group' as const,
+							groupId: group.id,
+						})),
+					);
 				}
 			}
 
