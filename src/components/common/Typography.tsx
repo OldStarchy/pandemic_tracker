@@ -13,3 +13,9 @@ export const H2 = styled.h1`
 	font-size: 1.25rem;
 	padding: 0.5rem 0;
 `;
+
+export const H3 = styled.h1`
+	font-size: 1.1rem;
+	padding: 0.5rem 0;
+	font-weight: bold;
+`;
