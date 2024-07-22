@@ -19,14 +19,14 @@ export function createDeckReducer(
 	state: Universe,
 	action: CreateDeckAction,
 ): Universe {
+	if (state.decks.some((deck) => deck.id === action.id)) {
+		return state;
+	}
+
 	const newDeck: Deck = {
 		id: action.id,
 		items: [],
 	};
-
-	if (state.decks.some((deck) => deck.id === action.id)) {
-		return state;
-	}
 
 	return {
 		...state,
