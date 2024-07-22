@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CardBase } from './CardBase';
 
 export function CardSelectToggle({
-	cardName: cardName,
+	cardName,
 	cardCount,
 	selected,
 	setSelected,

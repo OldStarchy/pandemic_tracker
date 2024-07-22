@@ -16,7 +16,7 @@ export function DeckView({
 	deck: Deck;
 	cardPrefix?: (card: DeckItem, index: number) => React.ReactNode;
 }) {
-	const [universe, _dispatch] = useUniverse();
+	const [universe] = useUniverse();
 	const groupedCards = deck.items;
 	const [expanded, setExpanded] = React.useState(false);
 

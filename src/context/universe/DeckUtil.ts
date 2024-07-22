@@ -96,6 +96,7 @@ export default class DeckUtil {
 
 			default:
 				const _exhaustiveCheck: never = item;
+				void _exhaustiveCheck;
 		}
 	}
 }

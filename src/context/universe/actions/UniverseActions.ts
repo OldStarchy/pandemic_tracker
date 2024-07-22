@@ -71,6 +71,7 @@ export const universeReducer: Reducer<
 
 		default:
 			const _exhaustiveCheck: never = action;
+			void _exhaustiveCheck;
 			return state;
 	}
 };

@@ -132,6 +132,7 @@ function revealSingletonGroups(state: Universe) {
 
 				default: {
 					const _exhaustiveCheck: never = item;
+					void _exhaustiveCheck;
 					return true;
 				}
 			}
