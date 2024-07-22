@@ -43,7 +43,12 @@ import {
 } from './context/actions/DeckActions';
 import { revealCard } from './context/actions/GroupActions';
 import { load, reset } from './context/actions/UniverseActions';
-import { redoAction, undoAction } from './context/withUndoReducer';
+import {
+	clearHistory,
+	pushToHistory,
+	redoAction,
+	undoAction,
+} from './context/withUndoReducer';
 import { cities } from './data/cities';
 import { createSave, loadSave } from './lib/SaveFormat';
 
@@ -118,6 +123,7 @@ function App() {
 		);
 		dispatch(shuffleDeck(INFECTION_DECK));
 		dispatch(createDeck(DISCARD_DECK));
+		dispatch(clearHistory());
 	}, []);
 
 	const infectionDeck = universe.decks.find(
@@ -340,6 +346,7 @@ function App() {
 							const { universe, drawCount } = loadSave(json);
 
 							dispatch(load(universe));
+							dispatch(pushToHistory());
 							setDrawCount(drawCount);
 						};
 						input.click();
@@ -391,6 +398,7 @@ function App() {
 						dispatch(
 							moveCard(DISCARD_DECK, 0, INFECTION_DECK, 0, -1),
 						);
+						dispatch(pushToHistory());
 					}}
 				>
 					Shuffle and Restack <FontAwesomeIcon icon={faShuffle} />
@@ -451,6 +459,7 @@ function App() {
 						).universe;
 						//TODO: Validate structure
 						dispatch(load(json));
+						dispatch(pushToHistory());
 						setEditDeckFormVisible(false);
 					}}
 					style={{
@@ -494,6 +503,7 @@ function App() {
 							moveCard(INFECTION_DECK, 0, DISCARD_DECK, 0, 1),
 						);
 						dispatch(revealCard(DISCARD_DECK, 0, card));
+						dispatch(pushToHistory());
 					}}
 				/>
 			</Popup>
@@ -508,6 +518,7 @@ function App() {
 							moveCard(INFECTION_DECK, -1, DISCARD_DECK, 0, 1),
 						);
 						dispatch(revealCard(DISCARD_DECK, 0, card));
+						dispatch(pushToHistory());
 
 						setBottomDrawFormVisible(false);
 					}}
