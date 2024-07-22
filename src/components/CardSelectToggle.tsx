@@ -1,41 +1,42 @@
 import { useEffect, useState } from 'react';
-import { Card } from '../lib/Card';
 import { CardBase } from './CardBase';
 
 export function CardSelectToggle({
-	card,
+	cardName: cardName,
+	cardCount,
 	selected,
 	setSelected,
 }: {
-	card: Card;
+	cardName: string;
+	cardCount: number;
 	selected: number;
 	setSelected: (count: number) => void;
 }) {
 	selected = selected ?? 0;
-	const unselected = card.count - selected;
+	const unselected = cardCount - selected;
 
 	const [visibleUnselected, setVisibleUnselected] = useState(unselected);
 
 	useEffect(() => {
 		if (selected !== 0) {
-			setVisibleUnselected(card.count - selected);
+			setVisibleUnselected(cardCount - selected);
 		} else {
 			const timeout = setTimeout(() => {
-				setVisibleUnselected(card.count - selected);
+				setVisibleUnselected(cardCount - selected);
 			}, 100);
 
 			return () => {
 				clearTimeout(timeout);
 			};
 		}
-	}, [selected, card.count]);
+	}, [selected, cardCount]);
 
 	return (
 		<div
 			style={{
 				position: 'relative',
 				userSelect: 'none',
-				color: card.count === 0 ? 'gray' : undefined,
+				color: cardCount === 0 ? 'gray' : undefined,
 			}}
 		>
 			<CardBase
@@ -47,45 +48,31 @@ export function CardSelectToggle({
 					right: 0,
 					display: 'flex',
 					justifyContent: 'space-between',
+					background: 'var(--color-background)',
 				}}
 			>
 				<span>{visibleUnselected}</span>
 				<span>0</span>
 			</CardBase>
 			<CardBase
-				key={card.name}
+				key={cardName}
 				style={{
 					marginLeft: selected > 0 ? '2rem' : 0,
 					marginRight: selected > 0 ? 0 : '2rem',
-					transition: `margin-left 0.1s ease-out,
-                  margin-right 0.1s ease-out`,
-					cursor: card.count > 0 ? 'pointer' : undefined,
+					transition: `margin-left 0.1s ease-out, margin-right 0.1s ease-out`,
+					cursor: cardCount > 0 ? 'pointer' : undefined,
+					background: 'var(--color-background)',
 				}}
 				onClick={(e) => {
-					if (card.count === 0) return;
+					if (cardCount === 0) return;
 
 					if (e.shiftKey) {
-						setSelected(selected === 0 ? card.count : 0);
+						setSelected(selected === 0 ? cardCount : 0);
 					} else {
-						setSelected((selected + 1) % (card.count + 1));
+						setSelected((selected + 1) % (cardCount + 1));
 					}
 				}}
 			>
-				{card.image && (
-					<img
-						style={{
-							position: 'absolute',
-							inset: 0,
-							width: '100%',
-							height: '100%',
-							zIndex: 0,
-							objectFit: 'cover',
-							filter: 'brightness(0.3)',
-						}}
-						src={card.image}
-						alt={card.name}
-					/>
-				)}
 				<div
 					style={{
 						zIndex: 1,
@@ -95,9 +82,8 @@ export function CardSelectToggle({
 						gap: '1rem',
 					}}
 				>
-					<h3 style={{ flexGrow: 1 }}>{card.name}</h3>
-					<p>{card.type}</p>
-					<p>x{selected > 0 ? selected : card.count}</p>
+					<h3 style={{ flexGrow: 1 }}>{cardName}</h3>
+					<p>x{selected > 0 ? selected : cardCount}</p>
 				</div>
 			</CardBase>
 		</div>

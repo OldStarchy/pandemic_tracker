@@ -53,51 +53,75 @@ export function createCardReducer(
 export const ACTION_DESTROY_CARD = 'ACTION_DESTROY_CARD';
 interface DestroyCardAction {
 	type: typeof ACTION_DESTROY_CARD;
-	id: string;
+	ids: string[];
 }
 
-export function destroyCard(id: string): DestroyCardAction {
-	return { type: ACTION_DESTROY_CARD, id };
+export function destroyCard(...ids: string[]): DestroyCardAction {
+	return { type: ACTION_DESTROY_CARD, ids };
 }
 
 export function destroyCardReducer(
 	state: Universe,
 	action: DestroyCardAction,
 ): Universe {
-	const cardExists = state.cards.some((card) => card.id === action.id);
+	const cardExists = action.ids.some((id) =>
+		state.cards.some((card) => card.id === id),
+	);
 
 	if (!cardExists) {
 		return state;
 	}
 
-	const cards = state.cards.filter((card) => card.id !== action.id);
+	const cards = state.cards.filter((card) => !action.ids.includes(card.id));
 
-	const decks = state.decks.map((deck) => {
-		if (
-			deck.items.some((c) => c.type === 'card' && c.cardId === action.id)
-		) {
-			return {
-				...deck,
-				items: deck.items.filter(
-					(c) => c.type === 'card' && c.cardId !== action.id,
-				),
-			};
-		}
-		return deck;
-	});
+	const groupItemsRemovedById: Record<string, number> = {};
 
 	const groups = state.groups.map((group) => {
-		if (group.cardIds.has(action.id)) {
-			const cards = new Set(group.cardIds);
-			cards.delete(action.id);
+		const newGroup = { ...group, cardIds: new Set(group.cardIds) };
+		let anyDeleted = false;
 
-			return {
-				...group,
-				cardIds: cards,
-			};
+		for (const id of action.ids) {
+			if (newGroup.cardIds.has(id)) {
+				newGroup.cardIds.delete(id);
+				groupItemsRemovedById[group.id] =
+					(groupItemsRemovedById[group.id] || 0) + 1;
+				anyDeleted = true;
+			}
+		}
+
+		if (anyDeleted) {
+			return newGroup;
 		}
 
 		return group;
+	});
+
+	const decks = state.decks.map((deck) => {
+		if (
+			deck.items.some(
+				(c) =>
+					(c.type === 'card' && action.ids.includes(c.cardId)) ||
+					(c.type === 'group' &&
+						groupItemsRemovedById[c.groupId] > 0),
+			)
+		) {
+			return {
+				...deck,
+				items: deck.items.filter((c) => {
+					if (c.type === 'card' && action.ids.includes(c.cardId))
+						return false;
+					if (c.type === 'group') {
+						if (groupItemsRemovedById[c.groupId] > 0) {
+							groupItemsRemovedById[c.groupId]--;
+							return false;
+						}
+					}
+
+					return true;
+				}),
+			};
+		}
+		return deck;
 	});
 
 	return {

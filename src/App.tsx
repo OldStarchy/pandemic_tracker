@@ -2,7 +2,10 @@
 import {
 	faArrowTurnUp,
 	faArrowUp,
+	faChevronDown,
+	faChevronUp,
 	faEdit,
+	faEllipsis,
 	faFileExport,
 	faFileImport,
 	faMinus,
@@ -10,6 +13,7 @@ import {
 	faRedo,
 	faShuffle,
 	faStar,
+	faTrash,
 	faUndo,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -23,30 +27,36 @@ import {
 } from 'react';
 import './App.css';
 import { CardBase } from './components/CardBase';
+import { CardSelectList } from './components/CardSelectList';
 import { DeckView } from './components/DeckView';
 import { Popup } from './components/Popup';
 import { Button } from './components/common/Button';
 import { Input } from './components/common/Input';
 import { Select } from './components/common/Select';
 import { H2 } from './components/common/Typography';
-import { Card } from './context/Card';
-import CardUtil from './context/CardUtil';
-import { DeckItem } from './context/Deck';
-import DeckUtil from './context/DeckUtil';
-import { Group } from './context/Group';
-import { useCanUndo, useUniverse } from './context/UniverseContext';
-import { createCards } from './context/actions/CardActions';
+import CreateCardForm from './components/form/CreateCardForm';
+import { DISCARD_DECK, INFECTION_DECK, TEMP_DECK } from './consts';
+import { Card } from './context/universe/Card';
+import CardUtil from './context/universe/CardUtil';
+import { DeckItem } from './context/universe/Deck';
+import DeckUtil from './context/universe/DeckUtil';
+import { Group } from './context/universe/Group';
+import { useCanUndo, useUniverse } from './context/universe/UniverseContext';
+import {
+	createCards,
+	destroyCard,
+} from './context/universe/actions/CardActions';
 import {
 	createDeck,
 	moveCard,
 	shuffleDeck,
-} from './context/actions/DeckActions';
-import { revealCard } from './context/actions/GroupActions';
-import { load, reset } from './context/actions/UniverseActions';
+} from './context/universe/actions/DeckActions';
+import { revealCard } from './context/universe/actions/GroupActions';
+import { load, reset } from './context/universe/actions/UniverseActions';
 import {
 	clearHistory,
-	pushToHistory,
 	redoAction,
+	setKeyframe,
 	undoAction,
 } from './context/withUndoReducer';
 import { cities } from './data/cities';
@@ -87,9 +97,6 @@ function createStripeyBackground(colors: string[]): string {
 		.join(', ')})`;
 }
 
-const INFECTION_DECK = 'Infection Deck';
-const DISCARD_DECK = 'Discard Deck';
-
 function App() {
 	const [drawCount, setDrawCountRaw] = useState(1);
 	const [topDrawFormVisible, setTopDrawFormVisible] = useState(false);
@@ -97,6 +104,8 @@ function App() {
 	const [editDeckFormVisible, setEditDeckFormVisible] = useState(false);
 
 	const [editDeckData, setEditDeckData] = useState<string>('');
+
+	const [expandDrawChanceList, setExpandDrawChanceList] = useState(false);
 
 	const setDrawCount = useCallback<Dispatch<SetStateAction<number>>>(
 		(count) => {
@@ -110,9 +119,42 @@ function App() {
 	const [universe, dispatch] = useUniverse();
 	const { canUndo, canRedo } = useCanUndo();
 
+	const [selectedCardsToDelete, setSelectedCardsToDelete] = useState<
+		Record<string, number>
+	>({});
+	const cardNameCountMap = useMemo(() => {
+		const cardNameCountMap: Record<string, number> = {};
+		for (const card of universe.cards) {
+			cardNameCountMap[card.name] =
+				(cardNameCountMap[card.name] ?? 0) + 1;
+		}
+		return cardNameCountMap;
+	}, [universe.cards]);
+
+	const deleteSelectedCards = useCallback(() => {
+		const selected = { ...selectedCardsToDelete };
+
+		const idsToDelete: string[] = [];
+
+		for (const card of universe.cards) {
+			if (selected[card.name] > 0) {
+				idsToDelete.push(card.id);
+				selected[card.name] -= 1;
+			}
+		}
+
+		setSelectedCardsToDelete({});
+		dispatch(destroyCard(...idsToDelete));
+		dispatch(setKeyframe());
+	}, [selectedCardsToDelete, universe.cards]);
+
 	useEffect(() => {
 		dispatch(reset());
+
 		dispatch(createDeck(INFECTION_DECK));
+		dispatch(createDeck(DISCARD_DECK));
+		dispatch(createDeck(TEMP_DECK));
+
 		dispatch(
 			createCards(
 				INFECTION_DECK,
@@ -122,7 +164,7 @@ function App() {
 			),
 		);
 		dispatch(shuffleDeck(INFECTION_DECK));
-		dispatch(createDeck(DISCARD_DECK));
+
 		dispatch(clearHistory());
 	}, []);
 
@@ -218,10 +260,9 @@ function App() {
 					style={{
 						display: 'flex',
 						alignItems: 'center',
-						gap: '0.5rem',
+						gap: 'var(--gap-buttons)',
 					}}
 				>
-					<label>Draw Count</label>
 					<Button
 						style={{ aspectRatio: '1' }}
 						onClick={() => {
@@ -232,6 +273,8 @@ function App() {
 					</Button>
 					<Input
 						type="number"
+						label="Draw Count"
+						statusBarMessage="Select the number of cards you will draw. This will affect the draw probabilities."
 						min="1"
 						style={{ flexGrow: 1 }}
 						value={drawCount}
@@ -249,7 +292,13 @@ function App() {
 					</Button>
 				</div>
 			</section>
-			<section>
+			<section
+				style={{
+					display: 'flex',
+					gap: 'var(--gap-buttons)',
+					flexWrap: 'wrap',
+				}}
+			>
 				<Button
 					onClick={() => dispatch(undoAction())}
 					disabled={!canUndo}
@@ -264,7 +313,21 @@ function App() {
 				</Button>
 			</section>
 			<section>
-				<H2>Draw Chance</H2>
+				<header style={{ display: 'flex', gap: '1rem' }}>
+					<H2>Draw Chance</H2>
+					<Button
+						type="button"
+						onClick={() => setExpandDrawChanceList((e) => !e)}
+					>
+						<FontAwesomeIcon
+							icon={
+								expandDrawChanceList
+									? faChevronUp
+									: faChevronDown
+							}
+						/>
+					</Button>
+				</header>
 				<ol
 					style={{
 						display: 'flex',
@@ -272,8 +335,9 @@ function App() {
 						gap: '0.25rem',
 					}}
 				>
-					{cardDrawProbabilities.map(
-						({ cardName, probability }, index) => {
+					{cardDrawProbabilities
+						.slice(0, expandDrawChanceList ? undefined : 5)
+						.map(({ cardName, probability }, index) => {
 							const color = [...colors.entries()]
 								.filter(([assortment]) =>
 									Array.from(
@@ -303,11 +367,22 @@ function App() {
 									</CardBase>
 								</li>
 							);
-						},
-					)}
+						})}
+					{!expandDrawChanceList &&
+						cardDrawProbabilities.length > 5 && (
+							<li key="more">
+								<FontAwesomeIcon icon={faEllipsis} />
+							</li>
+						)}
 				</ol>
 			</section>
-			<section>
+			<section
+				style={{
+					display: 'flex',
+					gap: 'var(--gap-buttons)',
+					flexWrap: 'wrap',
+				}}
+			>
 				<Button
 					onClick={() => {
 						const data = createSave({
@@ -346,7 +421,7 @@ function App() {
 							const { universe, drawCount } = loadSave(json);
 
 							dispatch(load(universe));
-							dispatch(pushToHistory());
+							dispatch(setKeyframe());
 							setDrawCount(drawCount);
 						};
 						input.click();
@@ -369,7 +444,13 @@ function App() {
 					Edit Infction Deck <FontAwesomeIcon icon={faEdit} />
 				</Button>
 			</section>
-			<section>
+			<section
+				style={{
+					display: 'flex',
+					gap: 'var(--gap-buttons)',
+					flexWrap: 'wrap',
+				}}
+			>
 				<Button
 					onClick={() => {
 						if (!infectionDeck || !nextDrawOptions) return;
@@ -398,10 +479,20 @@ function App() {
 						dispatch(
 							moveCard(DISCARD_DECK, 0, INFECTION_DECK, 0, -1),
 						);
-						dispatch(pushToHistory());
+						dispatch(setKeyframe());
 					}}
 				>
 					Shuffle and Restack <FontAwesomeIcon icon={faShuffle} />
+				</Button>
+
+				<Button
+					onClick={() => {
+						dispatch(shuffleDeck(INFECTION_DECK));
+						dispatch(setKeyframe());
+					}}
+				>
+					Shuffle the Infection Deck{' '}
+					<FontAwesomeIcon icon={faShuffle} />
 				</Button>
 			</section>
 			<section
@@ -450,6 +541,23 @@ function App() {
 					</section>
 				)}
 			</section>
+			<section>
+				<H2>Create Cards</H2>
+				<CreateCardForm />
+			</section>
+			<section>
+				<H2>Delete Cards</H2>
+				<Button onClick={deleteSelectedCards}>
+					Delete Selected Cards <FontAwesomeIcon icon={faTrash} />
+				</Button>
+				<section style={{ padding: '1rem' }}>
+					<CardSelectList
+						cards={cardNameCountMap}
+						selectedCards={selectedCardsToDelete}
+						setSelectedCards={setSelectedCardsToDelete}
+					/>
+				</section>
+			</section>
 			<Popup visible={editDeckFormVisible}>
 				<form
 					onSubmit={(e) => {
@@ -459,7 +567,7 @@ function App() {
 						).universe;
 						//TODO: Validate structure
 						dispatch(load(json));
-						dispatch(pushToHistory());
+						dispatch(setKeyframe());
 						setEditDeckFormVisible(false);
 					}}
 					style={{
@@ -503,7 +611,7 @@ function App() {
 							moveCard(INFECTION_DECK, 0, DISCARD_DECK, 0, 1),
 						);
 						dispatch(revealCard(DISCARD_DECK, 0, card));
-						dispatch(pushToHistory());
+						dispatch(setKeyframe());
 					}}
 				/>
 			</Popup>
@@ -518,7 +626,7 @@ function App() {
 							moveCard(INFECTION_DECK, -1, DISCARD_DECK, 0, 1),
 						);
 						dispatch(revealCard(DISCARD_DECK, 0, card));
-						dispatch(pushToHistory());
+						dispatch(setKeyframe());
 
 						setBottomDrawFormVisible(false);
 					}}

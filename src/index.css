@@ -13,8 +13,11 @@ code {
 }
 
 :root {
-	color: #cccccc;
-	background: black;
+	--color-background: black;
+	--color-text: #cccccc;
+	--gap-buttons: 0.5rem;
+	color: var(--color-text);
+	background: var(--color-background);
 	line-height: 1;
 }
 

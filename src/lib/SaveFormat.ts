@@ -1,7 +1,7 @@
-import { Card } from '../context/Card';
-import { Deck } from '../context/Deck';
-import { Group } from '../context/Group';
-import { Universe } from '../context/Universe';
+import { Card } from '../context/universe/Card';
+import { Deck } from '../context/universe/Deck';
+import { Group } from '../context/universe/Group';
+import { Universe } from '../context/universe/Universe';
 
 interface SaveFormatV0 {
 	infectionDeck: DeckSaveFormatV0;

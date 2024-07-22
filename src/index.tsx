@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { MainLayout } from './components/layout/MainLayout';
-import { UniverseProvider } from './context/UniverseContext';
+import { UniverseProvider } from './context/universe/UniverseContext';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import './reset.css';

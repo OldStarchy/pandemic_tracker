@@ -31,7 +31,7 @@ export function redoAction(): RedoAction {
 	return { type: ACTION_REDO };
 }
 
-export function pushToHistory(): PushToHistoryAction {
+export function setKeyframe(): PushToHistoryAction {
 	return { type: ACTION_PUSH_TO_HISTORY };
 }
 

@@ -1,6 +1,8 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
+import { StatusBarMessageProvider } from '../../context/StatusBarMessageContext';
 import { Link, Span } from '../common/Typography';
 
 const devMode = process.env.NODE_ENV === 'development';
@@ -20,6 +22,10 @@ export function MainLayout({ children }: { children: ReactNode }) {
 
 		return newIssueLink;
 	}, []);
+
+	const [statusBarMessage, setStatusBarMessage] = useState<string | null>(
+		null,
+	);
 
 	return (
 		<div
@@ -58,8 +64,20 @@ export function MainLayout({ children }: { children: ReactNode }) {
 					padding: '0 0.5rem',
 				}}
 			>
-				{children}
+				<StatusBarMessageProvider value={setStatusBarMessage}>
+					{children}
+				</StatusBarMessageProvider>
 			</main>
+			<footer>
+				<Span>
+					{statusBarMessage && (
+						<>
+							<FontAwesomeIcon icon={faInfoCircle} />{' '}
+						</>
+					)}
+					{statusBarMessage}
+				</Span>
+			</footer>
 			<footer
 				style={{
 					display: 'flex',

@@ -1,4 +1,4 @@
-import { Card } from '../context/Card';
+import { Card } from '../context/universe/Card';
 import { CardBase } from './CardBase';
 
 export function CardGrid({ cards }: { cards: Card[] }) {
