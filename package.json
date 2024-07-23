@@ -9,8 +9,8 @@
   "homepage": "https://oldstarchy.github.io/pandemic_tracker/",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "VITE_GIT_SHA=`git rev-parse --short HEAD` tsc -b && vite build && yarn sentry:sourcemaps",
+    "dev": "export GIT_SHA=\"Dev Mode\" && vite",
+    "build": "export GIT_SHA=$(git rev-parse --short HEAD) && echo $GIT_SHA && tsc -b && vite build && yarn sentry:sourcemaps",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org nicholas-sorokin --project pandemic-tracker ./dist && sentry-cli sourcemaps upload --org nicholas-sorokin --project pandemic-tracker ./dist"

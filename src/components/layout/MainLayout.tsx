@@ -175,7 +175,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
 				<Link href={newIssueLink.toString()} target="_BLANK">
 					Report an issue or suggest a feature
 				</Link>
-				{import.meta.env.DEV && <Span>Dev Mode</Span>}
+				<Span>{import.meta.env.VITE_GIT_SHA ?? 'Dev Mode'}</Span>
 			</footer>
 		</div>
 	);
