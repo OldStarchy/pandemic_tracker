@@ -7,12 +7,10 @@ import { Popup } from '../Popup';
 import { Button } from '../common/Button';
 import { H2, H3, Link, Span } from '../common/Typography';
 
-const devMode = import.meta.env.NODE_ENV === 'development';
-
 export function MainLayout({ children }: { children: ReactNode }) {
 	const [showWhatsNew, setShowWhatsNew] = useState(() => {
 		const dismissed = localStorage.getItem('whats_new.version_dismissed');
-		const sha = import.meta.env.REACT_APP_GIT_SHA;
+		const sha = import.meta.env.VITE_GIT_SHA;
 		const shouldShow = dismissed !== (sha ?? 'dev');
 		return shouldShow;
 	});
@@ -24,8 +22,8 @@ export function MainLayout({ children }: { children: ReactNode }) {
 
 		newIssueLink.searchParams.append(
 			'body',
-			(import.meta.env.REACT_APP_GIT_SHA
-				? `Version: ${import.meta.env.REACT_APP_GIT_SHA}\n\n`
+			(import.meta.env.VITE_GIT_SHA
+				? `Version: ${import.meta.env.VITE_GIT_SHA}\n\n`
 				: '') + '<!-- Write your issue here -->',
 		);
 
@@ -141,7 +139,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
 									onClick={() => {
 										localStorage.setItem(
 											'whats_new.version_dismissed',
-											import.meta.env.REACT_APP_GIT_SHA ??
+											import.meta.env.VITE_GIT_SHA ??
 												'dev',
 										);
 										setShowWhatsNew(false);
@@ -177,7 +175,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
 				<Link href={newIssueLink.toString()} target="_BLANK">
 					Report an issue or suggest a feature
 				</Link>
-				{devMode && <Span>Dev Mode</Span>}
+				{import.meta.env.DEV && <Span>Dev Mode</Span>}
 			</footer>
 		</div>
 	);

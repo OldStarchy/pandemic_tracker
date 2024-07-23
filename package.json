@@ -10,7 +10,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "REACT_APP_GIT_SHA=`git rev-parse --short HEAD` tsc -b && vite build && yarn sentry:sourcemaps",
+    "build": "VITE_GIT_SHA=`git rev-parse --short HEAD` tsc -b && vite build && yarn sentry:sourcemaps",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org nicholas-sorokin --project pandemic-tracker ./dist && sentry-cli sourcemaps upload --org nicholas-sorokin --project pandemic-tracker ./dist"
