@@ -27,7 +27,7 @@ export function reset(): ResetAction {
 	return { type: ACTION_RESET };
 }
 
-export function resetReducer(state: Universe, action: ResetAction): Universe {
+export function resetReducer(_state: Universe, _action: ResetAction): Universe {
 	return Universe.empty();
 }
 
@@ -39,7 +39,7 @@ export function load(universe: Universe): LoadAction {
 	return { type: ACTION_LOAD, universe };
 }
 
-export function loadReducer(state: Universe, action: LoadAction): Universe {
+export function loadReducer(_state: Universe, action: LoadAction): Universe {
 	return structuredClone(action.universe);
 }
 
@@ -69,10 +69,10 @@ export const universeReducer: Reducer<
 		case ACTION_REVEAL_CARD:
 			return revealCardReducer(state, action);
 
-		default:
+		default: {
 			const _exhaustiveCheck: never = action;
-			void _exhaustiveCheck;
 			return state;
+		}
 	}
 };
 

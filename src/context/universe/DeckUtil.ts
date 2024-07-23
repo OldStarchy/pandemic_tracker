@@ -94,9 +94,9 @@ export default class DeckUtil {
 					universe.groups.find((g) => g.id === item.groupId)!.cardIds,
 				).map((id) => CardUtil.getCardName(universe, id)!);
 
-			default:
+			default: {
 				const _exhaustiveCheck: never = item;
-				void _exhaustiveCheck;
+			}
 		}
 	}
 }

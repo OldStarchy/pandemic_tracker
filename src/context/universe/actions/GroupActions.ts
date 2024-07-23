@@ -43,9 +43,9 @@ export function revealCardReducer(
 	if (action.as) {
 		asCard = action.as;
 	} else {
-		if (group.cardIds.size > 1) return state;
+		if (group.cardIds.size !== 1) return state;
 
-		asCard = group.cardIds.values().next().value;
+		asCard = Array.from(group.cardIds)[0];
 	}
 
 	const newGroupCardIds = Array.from(group.cardIds);
@@ -132,7 +132,6 @@ function revealSingletonGroups(state: Universe) {
 
 				default: {
 					const _exhaustiveCheck: never = item;
-					void _exhaustiveCheck;
 					return true;
 				}
 			}

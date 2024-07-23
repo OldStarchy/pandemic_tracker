@@ -1,37 +1,58 @@
+import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
-import pluginJs from '@eslint/js';
+import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import pluginReactConfig from 'eslint-plugin-react/configs/recommended.js';
-import pluginReactHooks from 'eslint-plugin-react-hooks';
+import reactHooks from 'eslint-plugin-react-hooks';
+import pluginPrettier from 'eslint-plugin-prettier';
+import configPrettier from 'eslint-config-prettier';
 
-export default [
+export default tseslint.config(
 	{
-		ignores: ['eslint.config.mjs'],
-	},
-	{
-		files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
-	},
-	{ languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } } },
-	{ languageOptions: { globals: globals.browser } },
-	pluginJs.configs.recommended,
-	...tseslint.configs.recommended,
-	pluginReactConfig,
-	pluginReactHooks.configs.recommended,
-	{
+		files: ['**/*.ts', '**/*.tsx'],
+		ignores: ['**/dist', 'eslint.config.mjs', 'vite.config.ts'],
 		languageOptions: {
+			parser: tseslint.parser,
 			parserOptions: {
-				project: 'tsconfig.json',
+				project: ['./tsconfig.app.json'],
+			},
+			globals: {
+				...globals.browser,
+				...globals.es2024,
 			},
 		},
+		extends: tseslint.configs.recommendedTypeChecked,
+	},
+	eslint.configs.recommended,
+	{
+		plugins: { prettier: pluginPrettier },
+		.../** @type {import('typescript-eslint').ConfigWithExtends} */ (
+			configPrettier
+		),
+	},
+	{
+		plugins: { 'react-hooks': reactHooks },
 		rules: {
-			'@typescript-eslint/no-namespace': 'off',
-			'@typescript-eslint/no-confusing-void-expression': [
-				'error',
+			'react-hooks/rules-of-hooks': 'error',
+			'react-hooks/exhaustive-deps': 'warn',
+		},
+	},
+	{
+		plugins: {
+			'react-refresh': reactRefresh,
+		},
+
+		rules: {
+			'react-refresh/only-export-components': [
+				'warn',
 				{
-					ignoreVoidOperator: true,
+					allowConstantExport: true,
 				},
 			],
-			'react/react-in-jsx-scope': 'off',
+		},
+	},
+	{
+		rules: {
+			'no-unused-vars': 'off',
 			'@typescript-eslint/no-unused-vars': [
 				'error',
 				{
@@ -43,4 +64,4 @@ export default [
 			],
 		},
 	},
-];
+);

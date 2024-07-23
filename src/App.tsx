@@ -25,7 +25,6 @@ import {
 	useMemo,
 	useState,
 } from 'react';
-import './App.css';
 import { CardBase } from './components/CardBase';
 import { CardSelectList } from './components/CardSelectList';
 import { DeckView } from './components/DeckView';
@@ -576,7 +575,7 @@ function App() {
 
 						<DeckView
 							deck={infectionDeck}
-							cardPrefix={(card, index) => {
+							cardPrefix={(_card, index) => {
 								if (index < drawCount) {
 									return (
 										<FontAwesomeIcon

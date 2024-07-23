@@ -7,6 +7,14 @@
     "url": "https://github.com/oldstarchy/pandemic_tracker.git"
   },
   "homepage": "https://oldstarchy.github.io/pandemic_tracker/",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "REACT_APP_GIT_SHA=`git rev-parse --short HEAD` tsc -b && vite build && yarn sentry:sourcemaps",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org nicholas-sorokin --project pandemic-tracker ./dist && sentry-cli sourcemaps upload --org nicholas-sorokin --project pandemic-tracker ./dist"
+  },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@fortawesome/free-brands-svg-icons": "^6.5.2",
@@ -15,57 +23,28 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@sentry/cli": "^2.32.1",
     "@sentry/react": "^8.15.0",
-    "@testing-library/jest-dom": "^5.14.1",
-    "@testing-library/react": "^13.0.0",
-    "@testing-library/user-event": "^13.2.1",
-    "@types/jest": "^27.0.1",
-    "@types/node": "^16.7.13",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
     "fuzzy": "^0.1.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-scripts": "5.0.1",
-    "styled-components": "^6.1.11",
-    "typescript": "^5.4.5",
-    "web-vitals": "^2.1.0"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "REACT_APP_GIT_SHA=`git rev-parse --short HEAD` react-scripts build && yarn sentry:sourcemaps",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org nicholas-sorokin --project pandemic-tracker ./build && sentry-cli sourcemaps upload --org nicholas-sorokin --project pandemic-tracker ./build"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "resolutions": {
-    "styled-components": "^5"
+    "styled-components": "^6.1.11"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@eslint/js": "^9.5.0",
-    "eslint": "^9.6.0",
-    "eslint-config-react-app": "^7.0.1",
-    "eslint-plugin-react": "^7.34.3",
+    "@babel/plugin-proposal-explicit-resource-management": "7.24.7",
+    "@eslint/js": "^9.7.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.16.1",
+    "@typescript-eslint/parser": "^7.16.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.7.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "globals": "^15.6.0",
-    "typescript-eslint": "^7.13.1"
+    "eslint-plugin-react-refresh": "^0.4.8",
+    "globals": "^15.8.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^7.16.1",
+    "vite": "^5.3.3"
   }
 }

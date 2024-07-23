@@ -1,11 +1,10 @@
 import * as Sentry from '@sentry/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import App from './App.tsx';
 import { MainLayout } from './components/layout/MainLayout';
 import { UniverseProvider } from './context/universe/UniverseContext';
 import './index.css';
-import reportWebVitals from './reportWebVitals';
 import './reset.css';
 
 Sentry.init({
@@ -23,14 +22,7 @@ Sentry.init({
 	replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
 });
 
-const root = ReactDOM.createRoot(
-	document.getElementById('root') as HTMLElement,
-);
-
-//TODO: set baseurl for deployment
-// console.log(process.env.FOOBAR);
-
-root.render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
 	<React.StrictMode>
 		<MainLayout>
 			<UniverseProvider>
@@ -39,8 +31,3 @@ root.render(
 		</MainLayout>
 	</React.StrictMode>,
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
