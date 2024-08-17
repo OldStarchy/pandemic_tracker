@@ -6,7 +6,7 @@ import { Universe } from '../Universe';
 
 export const ACTION_REVEAL_CARD = 'ACTION_REVEAL_CARD';
 
-interface RevealCardAction {
+export interface RevealCardAction {
 	type: typeof ACTION_REVEAL_CARD;
 	deckId: Deck['id'];
 	index: number;

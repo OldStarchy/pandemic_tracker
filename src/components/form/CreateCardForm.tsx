@@ -1,5 +1,4 @@
 import { FormEvent, memo, useMemo, useState } from 'react';
-import { INFECTION_DECK, TEMP_DECK } from '../../consts';
 import { Card } from '../../context/universe/Card';
 import {
 	UniverseDispatch,
@@ -8,6 +7,7 @@ import {
 import { createCards } from '../../context/universe/actions/CardActions';
 import { moveCard } from '../../context/universe/actions/DeckActions';
 import { setKeyframe } from '../../context/withUndoReducer';
+import { INFECTION_DECK, TEMP_DECK } from '../../lib/consts';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 
@@ -28,10 +28,13 @@ const CreateCardFormImpl = memo(function CreateCardFormImpl({
 
 	const cardCounts = useMemo(() => {
 		const cardNames = Object.entries(
-			cards.reduce((acc, card) => {
-				acc[card.name] = (acc[card.name] || 0) + 1;
-				return acc;
-			}, {} as Record<string, number>),
+			cards.reduce(
+				(acc, card) => {
+					acc[card.name] = (acc[card.name] || 0) + 1;
+					return acc;
+				},
+				{} as Record<string, number>,
+			),
 		);
 		cardNames.sort((a, b) => a[0].localeCompare(b[0]));
 

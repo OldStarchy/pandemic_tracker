@@ -99,4 +99,22 @@ export default class DeckUtil {
 			}
 		}
 	}
+
+	static canShuffle(deck: Deck | undefined) {
+		if (!deck) return false;
+		if (deck.items.length === 0) return false;
+
+		if (deck.items.some((item) => item.type === 'card')) return true;
+
+		const group = (deck.items[0] as DeckItem & { type: 'group' }).groupId;
+
+		if (
+			(deck.items as (DeckItem & { type: 'group' })[]).some(
+				(item) => item.groupId !== group,
+			)
+		)
+			return true;
+
+		return false;
+	}
 }

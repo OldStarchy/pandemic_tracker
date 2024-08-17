@@ -1,4 +1,4 @@
-import { Context, Reducer, useContext, useMemo } from 'react';
+import {Context, Reducer, useContext, useMemo} from 'react';
 
 export const ACTION_UNDO = 'ACTION_UNDO';
 export const ACTION_REDO = 'ACTION_REDO';
@@ -17,7 +17,7 @@ interface ClearHistoryAction {
 	type: typeof ACTION_CLEAR_HISTORY;
 }
 
-type UndoActions =
+export type UndoActions =
 	| UndoAction
 	| RedoAction
 	| PushToHistoryAction
@@ -39,7 +39,7 @@ export function clearHistory(): ClearHistoryAction {
 	return { type: ACTION_CLEAR_HISTORY };
 }
 
-interface StateWithUndo<T, TAction> {
+export interface StateWithUndo<T, TAction> {
 	past: { initial: T; actions: TAction[] }[];
 	future: TAction[][];
 	current: T;

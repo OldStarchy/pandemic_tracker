@@ -1,13 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { faEllipsis } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useMemo } from 'react';
-import { getAssortmentColors, getAssortmentLabels } from '../App';
 import CardUtil from '../context/universe/CardUtil';
 import { Deck, DeckItem } from '../context/universe/Deck';
 import { useUniverse } from '../context/universe/UniverseContext';
+import { getAssortmentColors } from '../lib/getAssortmentColors';
+import { getAssortmentLabels } from '../lib/getAssortmentLabels';
 import { CardBase } from './CardBase';
-import { Button } from './common/Button';
+import { ExpandoList } from './ExpandoList';
 
 export function DeckView({
 	deck,
@@ -17,23 +16,59 @@ export function DeckView({
 	cardPrefix?: (card: DeckItem, index: number) => React.ReactNode;
 }) {
 	const [universe] = useUniverse();
-	const groupedCards = deck.items;
 	const [expanded, setExpanded] = React.useState(false);
 
 	const colors = useMemo(() => getAssortmentColors(deck.items), [deck]);
 	const labels = useMemo(() => getAssortmentLabels(deck.items), [deck]);
 
+	const groupedCards = useMemo(() => {
+		const items: { item: DeckItem; count: number }[] = [];
+
+		for (const item of deck.items) {
+			if (items.length === 0) {
+				items.push({ item, count: 1 });
+				continue;
+			}
+
+			let top = items[items.length - 1];
+
+			if (item.type !== top.item.type) {
+				items.push({ item, count: 1 });
+				continue;
+			}
+
+			if (item.type === 'card') {
+				if (
+					CardUtil.getCardName(universe, item.cardId) ===
+					CardUtil.getCardName(
+						universe,
+						(top.item as DeckItem & { type: 'card' }).cardId,
+					)
+				) {
+					top.count++;
+					continue;
+				}
+			} else {
+				if (
+					item.groupId ===
+					(top.item as DeckItem & { type: 'group' }).groupId
+				) {
+					top.count++;
+					continue;
+				}
+			}
+
+			items.push({ item, count: 1 });
+		}
+
+		return items;
+	}, [deck.items]);
+
 	return (
 		<div>
-			{groupedCards.length > 5 && (
-				<Button onClick={() => setExpanded((expanded) => !expanded)}>
-					{expanded ? 'Show 5' : 'Show all'}
-				</Button>
-			)}
 			<ol>
-				{groupedCards
-					.slice(0, expanded ? undefined : 5)
-					.map((card, index) => (
+				<ExpandoList expanded={expanded} setExpanded={setExpanded}>
+					{groupedCards.map(({ item: card, count }, index) => (
 						<li
 							key={index}
 							style={{
@@ -43,59 +78,32 @@ export function DeckView({
 								margin: '0.25rem 0',
 							}}
 						>
-							{cardPrefix?.(card, index)}
+							{cardPrefix?.(
+								card,
+								groupedCards
+									.slice(0, index)
+									.reduce((a, b) => a + b.count, 0),
+							)}
 							<CardBase
 								style={{
 									flexGrow: 1,
-									height:
-										// (1 + Math.min(count, 6) * 0.75).toFixed(1) +
-										'1.75rem',
+									height: `${1.5 + count * 0.25}rem`,
 									backgroundColor:
 										card.type === 'group'
 											? colors.get(card.groupId)
 											: undefined,
 								}}
 							>
-								{card.type === 'card'
-									? CardUtil.getCardName(
-											universe,
-											card.cardId,
-									  )
-									: `1 of ${
-											universe.groups.find(
-												(g) => g.id === card.groupId,
-											)?.cardIds.size
-									  }`}
+								{card.type === 'card' &&
+									CardUtil.getCardName(universe, card.cardId)}
 								{card.type === 'group' && (
-									<> Group {labels.get(card.groupId)}</>
+									<>Group {labels.get(card.groupId)} Card</>
 								)}
-								{/* x{count} */}
-								{/* {card .type === 'group' &&
-								universe.groups.find(g => g.id === card.groupId)?.cardIds.size < 5 && (
-									<>
-										{' '}
-										(
-										{[...card.cards.entries()]
-											.map(
-												([c, count]) =>
-													`${c.name}${
-														count > 1
-															? ` x${count}`
-															: ''
-													}`,
-											)
-											.join(', ')}
-										)
-									</>
-								)} */}
+								{count !== 1 && ` (x${count})`}
 							</CardBase>
 						</li>
 					))}
-				{!expanded && groupedCards.length > 5 && (
-					<li>
-						<FontAwesomeIcon icon={faEllipsis} />
-					</li>
-				)}
+				</ExpandoList>
 			</ol>
 		</div>
 	);
