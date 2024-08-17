@@ -77,7 +77,10 @@ const CreateCardFormImpl = memo(function CreateCardFormImpl({
 	}, [cardCounts]);
 
 	return (
-		<form onSubmit={handleSubmit}>
+		<form
+			onSubmit={handleSubmit}
+			style={{ display: 'flex', flexWrap: 'wrap' }}
+		>
 			{dataList}
 			<Input
 				label="Name"
