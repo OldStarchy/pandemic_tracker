@@ -1,6 +1,6 @@
 import { Card } from './Card';
 
 export interface Group {
-	readonly id: string;
-	readonly cardIds: ReadonlySet<Card['id']>;
+	id: string;
+	cardIds: Set<Card['id']>;
 }
