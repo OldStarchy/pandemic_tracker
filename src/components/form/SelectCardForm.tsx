@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card } from '../../context/universe/Card';
 import { Button } from '../common/Button';
 import { Select } from '../common/Select';
@@ -13,6 +13,10 @@ export function SelectCardForm({
 	onSelectCard: (card: Card['name']) => void;
 }) {
 	const [cardName, setCardName] = useState(options[0]);
+	const orderedOptions = useMemo(
+		() => [...options].sort((a, b) => a.localeCompare(b)),
+		[options],
+	);
 
 	useEffect(() => {
 		if (options.length === 0) {
@@ -38,7 +42,7 @@ export function SelectCardForm({
 					setCardName(e.target.value);
 				}}
 			>
-				{options.map((cardName) => (
+				{orderedOptions.map((cardName) => (
 					<option value={cardName} key={cardName}>
 						{cardName}
 					</option>
