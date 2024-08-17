@@ -5,9 +5,8 @@ import {
 	useUniverse,
 } from '../../context/universe/UniverseContext';
 import { createCards } from '../../context/universe/actions/CardActions';
-import { moveCard } from '../../context/universe/actions/DeckActions';
 import { setKeyframe } from '../../context/withUndoReducer';
-import { INFECTION_DECK, TEMP_DECK } from '../../lib/consts';
+import { INFECTION_DECK } from '../../lib/consts';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 
@@ -44,8 +43,9 @@ const CreateCardFormImpl = memo(function CreateCardFormImpl({
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
-		dispatch(createCards(TEMP_DECK, ...new Array(count).fill(name)));
-		dispatch(moveCard(TEMP_DECK, 0, INFECTION_DECK, 0, -1));
+		dispatch(
+			createCards(INFECTION_DECK, 0, ...new Array(count).fill(name)),
+		);
 		dispatch(setKeyframe());
 		setName('');
 		setCount(1);

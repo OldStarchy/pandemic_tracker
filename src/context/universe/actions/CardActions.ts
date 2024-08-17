@@ -6,13 +6,20 @@ interface CreateCardAction {
 	type: typeof ACTION_CREATE_CARD;
 	names: string[];
 	targetDeckId: Deck['id'];
+	targetIndex: number;
 }
 
 export function createCards(
 	targetDeck: Deck['id'],
+	targetIndex: number,
 	...names: string[]
 ): CreateCardAction {
-	return { type: ACTION_CREATE_CARD, names, targetDeckId: targetDeck };
+	return {
+		type: ACTION_CREATE_CARD,
+		names,
+		targetDeckId: targetDeck,
+		targetIndex,
+	};
 }
 
 export function createCardReducer(
@@ -31,13 +38,14 @@ export function createCardReducer(
 	const newDeck = {
 		...deck,
 		items: [
-			...deck.items,
+			...deck.items.slice(0, action.targetIndex),
 			...newCards.map(
 				(card): DeckItem => ({
 					type: 'card',
 					cardId: card.id,
 				}),
 			),
+			...deck.items.slice(action.targetIndex),
 		],
 	};
 
