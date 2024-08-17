@@ -52,7 +52,7 @@ import { cities } from './data/cities';
 import { useDeck } from './hooks/useDeck';
 import { createSave, loadSave } from './lib/SaveFormat';
 import { getAutosave, saveToAutosave } from './lib/autosave';
-import { DISCARD_DECK, INFECTION_DECK, TEMP_DECK } from './lib/consts';
+import { DISCARD_DECK, INFECTION_DECK } from './lib/consts';
 
 function App() {
 	const [appState, dispatchAppState] = useAppState();
@@ -116,11 +116,11 @@ function App() {
 		} else {
 			dispatch(createDeck(INFECTION_DECK));
 			dispatch(createDeck(DISCARD_DECK));
-			dispatch(createDeck(TEMP_DECK));
 
 			dispatch(
 				createCards(
 					INFECTION_DECK,
+					0,
 					...Object.entries(cities).flatMap(([city, count]) =>
 						new Array(count).fill(city),
 					),

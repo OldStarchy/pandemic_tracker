@@ -2,6 +2,7 @@ import { Card } from '../context/universe/Card';
 import { Deck } from '../context/universe/Deck';
 import { Group } from '../context/universe/Group';
 import { Universe } from '../context/universe/Universe';
+import { DISCARD_DECK, INFECTION_DECK } from './consts';
 
 interface SaveFormatV0 {
 	infectionDeck: DeckSaveFormatV0;
@@ -150,11 +151,11 @@ export function loadSave(data: SaveFormatV0 | SaveFormatV1): {
 		}
 
 		const infectionDeck: WDeck = {
-			id: 'Infection Deck',
+			id: INFECTION_DECK,
 			items: [],
 		};
 		const discardDeck: WDeck = {
-			id: 'Discard Deck',
+			id: DISCARD_DECK,
 			items: [],
 		};
 
