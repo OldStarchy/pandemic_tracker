@@ -4,11 +4,9 @@ import {
 	faArrowUp,
 	faFileExport,
 	faFileImport,
-	faRedo,
 	faShuffle,
 	faStar,
 	faTrash,
-	faUndo,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -43,12 +41,7 @@ import {
 } from './context/universe/actions/DeckActions';
 import { revealCard } from './context/universe/actions/GroupActions';
 import { load, reset } from './context/universe/actions/UniverseActions';
-import {
-	clearHistory,
-	redoAction,
-	setKeyframe,
-	undoAction,
-} from './context/withUndoReducer';
+import { clearHistory, setKeyframe } from './context/withUndoReducer';
 import { cities } from './data/cities';
 import { useDeck } from './hooks/useDeck';
 import { createSave, loadSave } from './lib/SaveFormat';
@@ -177,26 +170,6 @@ function App() {
 				gap: '0.5rem',
 			}}
 		>
-			<section
-				style={{
-					display: 'flex',
-					gap: 'var(--gap-buttons)',
-					flexWrap: 'wrap',
-				}}
-			>
-				<Button
-					onClick={() => dispatch(undoAction())}
-					disabled={!canUndo}
-				>
-					Undo <FontAwesomeIcon icon={faUndo} />
-				</Button>
-				<Button
-					onClick={() => dispatch(redoAction())}
-					disabled={!canRedo}
-				>
-					Redo <FontAwesomeIcon icon={faRedo} />
-				</Button>
-			</section>
 			<section
 				style={{
 					display: 'flex',

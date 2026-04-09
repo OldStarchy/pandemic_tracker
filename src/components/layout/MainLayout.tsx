@@ -1,13 +1,26 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
-import { faInfoCircle, faNewspaper } from '@fortawesome/free-solid-svg-icons';
+import {
+	faInfoCircle,
+	faNewspaper,
+	faRedo,
+	faUndo,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ReactNode, useMemo, useState } from 'react';
 import { StatusBarMessageProvider } from '../../context/StatusBarMessageContext';
+import {
+	useCanUndo,
+	useUniverse,
+} from '../../context/universe/UniverseContext';
+import { redoAction, undoAction } from '../../context/withUndoReducer';
 import { Popup } from '../Popup';
 import { Button } from '../common/Button';
 import { H2, H3, Link, Span } from '../common/Typography';
 
 export function MainLayout({ children }: { children: ReactNode }) {
+	const [_universe, dispatch] = useUniverse();
+	const { canUndo, canRedo } = useCanUndo();
+
 	const [showWhatsNew, setShowWhatsNew] = useState(() => {
 		const dismissed = localStorage.getItem('whats_new.version_dismissed');
 		const sha = import.meta.env.VITE_GIT_SHA;
@@ -47,13 +60,28 @@ export function MainLayout({ children }: { children: ReactNode }) {
 			<header
 				style={{
 					display: 'flex',
-					justifyContent: 'space-between',
-					fontSize: '1.5rem',
+					gap: 'var(--gap-buttons)',
 					padding: '0.5rem',
+					borderBottom: '1px solid #ccc',
+					alignItems: 'center',
 				}}
 			>
-				<h1>Pandemic Tracker</h1>
-				<div style={{ marginRight: '-0.5rem' }}>
+				<Button
+					onClick={() => dispatch(undoAction())}
+					disabled={!canUndo}
+				>
+					<FontAwesomeIcon icon={faUndo} />
+				</Button>
+				<Button
+					onClick={() => dispatch(redoAction())}
+					disabled={!canRedo}
+				>
+					<FontAwesomeIcon icon={faRedo} />
+				</Button>
+				<h1 style={{ flexGrow: 1, fontSize: '1.5rem' }}>
+					Pandemic Tracker
+				</h1>
+				<div style={{ marginRight: '-0.5rem', fontSize: '1.5rem' }}>
 					<button
 						title="View what's new"
 						onClick={() => setShowWhatsNew(true)}
@@ -74,7 +102,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
 				style={{
 					flexGrow: 1,
 					overflow: 'auto',
-					padding: '0 0.5rem',
+					padding: '0.5rem 0.5rem 0',
 				}}
 			>
 				<StatusBarMessageProvider value={setStatusBarMessage}>
