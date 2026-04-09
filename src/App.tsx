@@ -24,11 +24,12 @@ import { DeckView } from './components/DeckView';
 import { DrawProbabilityCalculator } from './components/DrawProbabilityCalculator';
 import { Popup } from './components/Popup';
 import { Button } from './components/common/Button';
-import { H2 } from './components/common/Typography';
+import { H2, Hr } from './components/common/Typography';
 import CreateCardForm from './components/form/CreateCardForm';
 import { SelectCardForm } from './components/form/SelectCardForm';
 import { setDrawCount, setPopupVisible, useAppState } from './context/AppState';
 import { useStatusBarContext } from './context/StatusBarMessageContext';
+import { Deck, DeckItem } from './context/universe/Deck';
 import DeckUtil from './context/universe/DeckUtil';
 import { useCanUndo, useUniverse } from './context/universe/UniverseContext';
 import {
@@ -52,7 +53,7 @@ import { cities } from './data/cities';
 import { useDeck } from './hooks/useDeck';
 import { createSave, loadSave } from './lib/SaveFormat';
 import { getAutosave, saveToAutosave } from './lib/autosave';
-import { DISCARD_DECK, INFECTION_DECK } from './lib/consts';
+import { DISCARD_DECK, EXILE_DECK, INFECTION_DECK } from './lib/consts';
 
 function App() {
 	const [appState, dispatchAppState] = useAppState();
@@ -116,6 +117,7 @@ function App() {
 		} else {
 			dispatch(createDeck(INFECTION_DECK));
 			dispatch(createDeck(DISCARD_DECK));
+			dispatch(createDeck(EXILE_DECK));
 
 			dispatch(
 				createCards(
@@ -141,6 +143,7 @@ function App() {
 
 	const infectionDeck = useDeck(INFECTION_DECK);
 	const discardDeck = useDeck(DISCARD_DECK);
+	const exileDeck = useDeck(EXILE_DECK);
 
 	const canShuffleInfectionDeck = useMemo(
 		() => DeckUtil.canShuffle(infectionDeck),
@@ -249,6 +252,7 @@ function App() {
 				</Button>
 			</section>
 			<DrawProbabilityCalculator />
+			<Hr />
 			<section
 				style={{
 					display: 'flex',
@@ -280,80 +284,82 @@ function App() {
 				>
 					Draw Bottom <FontAwesomeIcon icon={faArrowTurnUp} />
 				</Button>
-				<Button
-					onClick={() => {
-						dispatch(shuffleDeck(DISCARD_DECK));
-						dispatch(
-							moveCard(DISCARD_DECK, 0, INFECTION_DECK, 0, -1),
-						);
-						dispatch(setKeyframe());
-					}}
-					disabled={(discardDeck?.items.length ?? 0) === 0}
-				>
-					Shuffle and Restack <FontAwesomeIcon icon={faShuffle} />
-				</Button>
-
-				<Button
-					onClick={() => {
-						dispatch(shuffleDeck(INFECTION_DECK));
-						dispatch(setKeyframe());
-					}}
-					disabled={!canShuffleInfectionDeck}
-				>
-					Shuffle the Infection Deck{' '}
-					<FontAwesomeIcon icon={faShuffle} />
-				</Button>
 			</section>
 			<section
 				style={{
 					display: 'grid',
-					gridTemplateColumns: '1fr 1fr',
-					gap: '0.5rem',
+					gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+					gap: '1rem',
 					position: 'relative',
 					isolation: 'isolate',
+					alignItems: 'stretch',
 				}}
 			>
-				{infectionDeck && (
-					<section
-						style={{
-							display: 'flex',
-							flexDirection: 'column',
+				<DeckViewWithHeading
+					deck={infectionDeck}
+					cardPrefix={(_card, index) => {
+						if (index < drawCount) {
+							return (
+								<FontAwesomeIcon
+									title="This card will be drawn"
+									icon={faStar}
+								/>
+							);
+						}
+						return null;
+					}}
+				>
+					<Button
+						onClick={() => {
+							dispatch(shuffleDeck(INFECTION_DECK));
+							dispatch(setKeyframe());
 						}}
+						disabled={!canShuffleInfectionDeck}
 					>
-						<H2>{infectionDeck.id}</H2>
-
-						<DeckView
-							deck={infectionDeck}
-							cardPrefix={(_card, index) => {
-								if (index < drawCount) {
-									return (
-										<FontAwesomeIcon
-											title="This card will be drawn"
-											icon={faStar}
-										/>
-									);
-								}
-								return null;
-							}}
-						/>
-					</section>
-				)}
-				{discardDeck && (
-					<section
-						style={{
-							display: 'flex',
-							flexDirection: 'column',
+						Shuffle <FontAwesomeIcon icon={faShuffle} />
+					</Button>
+				</DeckViewWithHeading>
+				<DeckViewWithHeading deck={discardDeck}>
+					<Button
+						onClick={() => {
+							dispatch(shuffleDeck(DISCARD_DECK));
+							dispatch(
+								moveCard(
+									DISCARD_DECK,
+									0,
+									INFECTION_DECK,
+									0,
+									-1,
+								),
+							);
+							dispatch(setKeyframe());
 						}}
+						disabled={(discardDeck?.items.length ?? 0) === 0}
 					>
-						<H2>{discardDeck.id}</H2>
-						<DeckView deck={discardDeck} />
-					</section>
-				)}
+						Shuffle and Restack <FontAwesomeIcon icon={faShuffle} />
+					</Button>
+				</DeckViewWithHeading>
+				<DeckViewWithHeading deck={exileDeck}>
+					<Button
+						onClick={() => {
+							dispatch(shuffleDeck(EXILE_DECK));
+							dispatch(
+								moveCard(EXILE_DECK, 0, INFECTION_DECK, 0, -1),
+							);
+							dispatch(setKeyframe());
+						}}
+						disabled={(exileDeck?.items.length ?? 0) === 0}
+					>
+						Shuffle and Restack <FontAwesomeIcon icon={faShuffle} />
+					</Button>
+				</DeckViewWithHeading>{' '}
 			</section>
+			<Hr />
 			<section>
 				<H2>Create Cards</H2>
 				<CreateCardForm />
 			</section>
+			<Hr />
 			<section>
 				<H2>Delete Cards</H2>
 				<Button onClick={deleteSelectedCards}>
@@ -372,6 +378,13 @@ function App() {
 					options={Array.from(new Set(nextDrawOptions ?? []))}
 					onCancel={() => {
 						setDrawTopPickerVisible(false);
+					}}
+					onExileCard={(card) => {
+						if (!exileDeck) dispatch(createDeck(EXILE_DECK));
+
+						dispatch(moveCard(INFECTION_DECK, 0, EXILE_DECK, 0, 1));
+						dispatch(revealCard(EXILE_DECK, 0, card));
+						dispatch(setKeyframe());
 					}}
 					onSelectCard={(card) => {
 						if (!infectionDeck) return;
@@ -406,3 +419,61 @@ function App() {
 }
 
 export default App;
+
+function DeckViewWithHeading({
+	deck,
+	cardPrefix,
+	children,
+}: {
+	deck: Deck | undefined;
+	cardPrefix?: (card: DeckItem, index: number) => React.ReactNode;
+	children?: React.ReactNode;
+}) {
+	return (
+		deck && (
+			<section
+				style={{
+					display: 'grid',
+					gridTemplateColumns: 'auto 1fr',
+					gridTemplateRows: '1fr auto',
+				}}
+			>
+				<H2
+					style={{
+						writingMode: 'vertical-rl',
+						transform: 'rotate(180deg)',
+						textAlign: 'right',
+						borderLeft: '1px solid var(--color-text)',
+						gridRow: '1 / span 2',
+						gridColumn: 1,
+					}}
+				>
+					{deck.id}
+				</H2>
+
+				<DeckView
+					style={{
+						borderTop: '1px solid var(--color-text)',
+						padding: '0 0.5rem',
+						gridRow: 1,
+						gridColumn: 2,
+					}}
+					deck={deck}
+					cardPrefix={cardPrefix}
+				/>
+
+				{children && (
+					<div
+						style={{
+							padding: '0.5rem',
+							gridRow: 2,
+							gridColumn: 2,
+						}}
+					>
+						{children}
+					</div>
+				)}
+			</section>
+		)
+	);
+}

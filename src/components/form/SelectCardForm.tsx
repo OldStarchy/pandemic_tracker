@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Card } from '../../context/universe/Card';
-import { Button } from '../common/Button';
-import { Select } from '../common/Select';
+import {useEffect, useMemo, useState} from 'react';
+import {Card} from '../../context/universe/Card';
+import {Button} from '../common/Button';
+import {Select} from '../common/Select';
 
 export function SelectCardForm({
 	options,
 	onCancel,
 	onSelectCard,
+	onExileCard,
 }: {
 	options: Card['name'][];
 	onCancel: () => void;
 	onSelectCard: (card: Card['name']) => void;
+	onExileCard?: (card: Card['name']) => void;
 }) {
 	const [cardName, setCardName] = useState(options[0]);
 	const orderedOptions = useMemo(
@@ -49,6 +51,16 @@ export function SelectCardForm({
 				))}
 			</Select>
 			<Button type="submit">Draw</Button>
+			{onExileCard && (
+				<Button
+					type="button"
+					onClick={() => {
+						onExileCard(cardName);
+					}}
+				>
+					Exile
+				</Button>
+			)}
 			<Button type="button" onClick={onCancel}>
 				Done
 			</Button>
