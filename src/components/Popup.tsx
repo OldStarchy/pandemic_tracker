@@ -3,9 +3,11 @@ import React from 'react';
 export function Popup({
 	visible,
 	children,
+	style,
 }: {
 	visible: boolean;
 	children: React.ReactNode;
+	style?: React.CSSProperties;
 }) {
 	return (
 		<div
@@ -26,6 +28,7 @@ export function Popup({
 					padding: '1rem',
 					borderRadius: '0.5rem',
 					boxShadow: '0 0 1rem black',
+					...style,
 				}}
 			>
 				{children}

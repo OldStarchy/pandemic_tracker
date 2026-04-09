@@ -20,8 +20,19 @@ export const H3 = styled.h1`
 	font-weight: bold;
 `;
 
+export const H4 = styled.h1`
+	font-size: 1rem;
+	padding: 0.5rem 0;
+	font-style: italic;
+`;
+
 export const Hr = styled.hr`
 	border: none;
 	border-top: 1px solid #ccc;
-	margin: 1rem -1rem;
+	margin: 1rem;
+`;
+
+export const Para = styled.p`
+	padding: 0.5rem 0;
+	line-height: 1.4;
 `;

@@ -15,7 +15,7 @@ import {
 import { redoAction, undoAction } from '../../context/withUndoReducer';
 import { Popup } from '../Popup';
 import { Button } from '../common/Button';
-import { H2, H3, Link, Span } from '../common/Typography';
+import { H2, H3, Hr, Link, Para, Span } from '../common/Typography';
 
 export function MainLayout({ children }: { children: ReactNode }) {
 	const [_universe, dispatch] = useUniverse();
@@ -108,54 +108,145 @@ export function MainLayout({ children }: { children: ReactNode }) {
 				<StatusBarMessageProvider value={setStatusBarMessage}>
 					{children}
 
-					<Popup visible={showWhatsNew}>
+					<Popup
+						visible={showWhatsNew}
+						style={{
+							border: '1px solid #ccc',
+							margin: '1rem',
+							height: '80dvh',
+						}}
+					>
 						<section
 							style={{
 								display: 'flex',
+								height: '100%',
 								flexDirection: 'column',
 								gap: '0.5rem',
+								lineHeight: 1.4,
+								alignItems: 'stretch',
 							}}
 						>
-							<H2>Whats New</H2>
-							<section>
-								<H3>New backend</H3>
-								<p>
-									The backend now uses immutable state with
-									react's useReducer. This also means the undo
-									stack has been fully reimplemented and is no
-									longer janky!
-								</p>
-							</section>
-							<section>
-								<H3>Card Management</H3>
-								<p>
-									You can now create and destroy cards without
-									manually editing the exported save file! Use
-									the forms at the bottom of the page.
-								</p>
-							</section>
-							<section>
-								<H3>Autosave</H3>
-								<p>Everything gets saved automatically now!</p>
-								<p>
-									Opening this app in multiple tabs will have
-									unpredictable results! (I don't recommend
-									doing it!)
-								</p>
-							</section>
-							<section>
-								<H3>What's New Section</H3>
-								<p>Its now a button in the header!</p>
-							</section>
-							<section>
-								<H3>UI impovements</H3>
-								<p>Everything looks slightly better now!</p>
-							</section>
-							<section>
-								<H3>Hints in the Footer!</H3>
-								<p>
-									Sometimes there will be hints in the footer!
-								</p>
+							<div
+								style={{
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+								}}
+							>
+								<H2>Whats New</H2>
+								<span>{import.meta.env.VITE_GIT_SHA}</span>
+							</div>
+							<section
+								style={{
+									overflowY: 'auto',
+								}}
+							>
+								<section>
+									<H3>Added the Exile Deck</H3>
+									<Para>
+										A new deck that can be used to exile
+										cards from the game. You can exile cards
+										by selecting "Exile" instead of "Draw"
+										in the draw card popup.
+									</Para>
+									<Para>
+										Exiled cards do not count towards any
+										draw probability calculations. You can
+										return the exiled cards to the Infection
+										Deck with the "Shuffle and Restack"
+										button.
+									</Para>
+								</section>
+								<section>
+									<H3>Moved Undo/Redo Buttons</H3>
+									<Para>
+										The undo and redo buttons have been
+										moved the header to make them easier to
+										find regardless of which page you're on.
+									</Para>
+								</section>
+								<section>
+									<H3>New Layout</H3>
+									<Para>
+										The deck display has been reworked a bit
+										to use up less horizontal screen space.
+										Decks will display side-by-side if there
+										is enough room, otherwise they'll stack
+										vertically.
+									</Para>
+									<Para>
+										There's also a bit more vertical space
+										with the addition of some dividers
+										between sections.
+									</Para>
+									<H3>Card Groups</H3>
+									<Para>
+										Card groups are now marked with a "?",
+										which is much shorter than "Group A" and
+										omits the practically useless group
+										names.
+									</Para>
+									<Para>
+										However they can now be expanded to show
+										the list of individal cards in the
+										group.
+									</Para>
+									<H3>Deck Action Buttons</H3>
+									<Para>
+										Some of the deck-specific action buttons
+										have also been moved under each deck's
+										heading to make it clear which deck is
+										getting shuffled and restacked.
+									</Para>
+								</section>
+								<Hr />
+								<H2>Old News</H2>
+								<section>
+									<H3>New backend</H3>
+									<Para>
+										The backend now uses immutable state
+										with react's useReducer. This also means
+										the undo stack has been fully
+										reimplemented and is no longer janky!
+									</Para>
+								</section>
+								<section>
+									<H3>Card Management</H3>
+									<Para>
+										You can now create and destroy cards
+										without manually editing the exported
+										save file! Use the forms at the bottom
+										of the page.
+									</Para>
+								</section>
+								<section>
+									<H3>Autosave</H3>
+									<Para>
+										Everything gets saved automatically now!
+									</Para>
+									<Para>
+										Opening this app in multiple tabs will
+										have unpredictable results! (I don't
+										recommend doing it!)
+									</Para>
+								</section>
+								<section>
+									<H3>What's New Section</H3>
+									<Para>Its now a button in the header!</Para>
+								</section>
+								<section>
+									<H3>UI impovements</H3>
+									<Para>
+										Everything looks slightly better now!
+									</Para>
+								</section>
+								<section>
+									<H3>Hints in the Footer!</H3>
+									<Para>
+										Sometimes there will be hints in the
+										footer!
+									</Para>
+								</section>
 							</section>
 							<section
 								style={{
