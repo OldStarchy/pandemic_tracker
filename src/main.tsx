@@ -25,12 +25,12 @@ Sentry.init({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
 	<React.StrictMode>
-		<MainLayout>
-			<UniverseProvider>
+		<UniverseProvider>
+			<MainLayout>
 				<AppStateProvider>
 					<App />
 				</AppStateProvider>
-			</UniverseProvider>
-		</MainLayout>
+			</MainLayout>
+		</UniverseProvider>
 	</React.StrictMode>,
 );
