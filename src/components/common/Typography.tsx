@@ -19,3 +19,9 @@ export const H3 = styled.h1`
 	padding: 0.5rem 0;
 	font-weight: bold;
 `;
+
+export const Hr = styled.hr`
+	border: none;
+	border-top: 1px solid #ccc;
+	margin: 1rem -1rem;
+`;
