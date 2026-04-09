@@ -25,7 +25,7 @@ export function CardSelectList({
 				: select(Object.entries(cards), {
 						name: filter,
 						fuzzy: !filterExact,
-				  });
+					});
 		filtered.sort(([a], [b]) => a.localeCompare(b));
 		return filtered;
 	}, [cards, filter, filterExact]);
@@ -71,7 +71,14 @@ export function CardSelectList({
 				>
 					Invert selection
 				</Button>
-				<section style={{ display: 'flex', gap: 'var(--gap-buttons)' }}>
+				<section
+					style={{
+						display: 'flex',
+						gap: 'var(--gap-buttons)',
+						alignItems: 'center',
+						flexGrow: 1,
+					}}
+				>
 					<Input
 						label="Filter"
 						statusBarMessage="Type to filter cards"
@@ -89,6 +96,21 @@ export function CardSelectList({
 							setFilterExact(e.target.checked);
 						}}
 					/>
+					{filter && (
+						<>
+							<div style={{ flexGrow: 1 }} />
+							<span>
+								{filteredCards.length === 0 ? (
+									<>No matches</>
+								) : (
+									<>
+										{filteredCards.length} match
+										{filteredCards.length > 1 ? 'es' : ''}
+									</>
+								)}
+							</span>
+						</>
+					)}
 				</section>
 			</section>
 			<section
@@ -102,8 +124,9 @@ export function CardSelectList({
 					onClick={() => {
 						setSelectedCards(Object.fromEntries(filteredCards));
 					}}
+					disabled={filter.length === 0}
 				>
-					Set selection to current
+					Select only filter results
 				</Button>
 				<Button
 					onClick={() => {
@@ -114,8 +137,9 @@ export function CardSelectList({
 							),
 						);
 					}}
+					disabled={filter.length === 0}
 				>
-					Remove current from selection
+					Deselect filter results
 				</Button>
 			</section>
 			<ul
