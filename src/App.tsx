@@ -103,6 +103,10 @@ function App() {
 		if (autosave) {
 			const data = loadSave(JSON.parse(autosave));
 			dispatch(load(data.universe));
+			dispatch(createDeck(INFECTION_DECK));
+			dispatch(createDeck(DISCARD_DECK));
+			dispatch(createDeck(EXILE_DECK));
+
 			setDrawww(data.drawCount);
 			setStatusBarMessage('Autosave loaded');
 			dispatch(clearHistory());
